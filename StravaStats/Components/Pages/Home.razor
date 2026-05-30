@@ -1,0 +1,52 @@
+﻿@page "/"
+@using OpenLayers.Blazor
+@using Services
+@using BusinessObjects
+@inject ActivityService activityService;
+@rendermode InteractiveServer
+
+<OpenStreetMap Style="border:0px;height: 500px; width: 100%;">
+    <Layers>
+        <Layer @ref="vectorLayer" LayerType="LayerType.Vector" SourceType="SourceType.Vector">
+            <Shapes>
+                <Circle Center="new(9.674681, 46.778543)" 
+                        Radius="50000" 
+                        Stroke="red" 
+                        Fill="rgba(255,0,0,0.2)" 
+                        StrokeThickness="3" />
+
+                @if (activities is not null)
+                {
+                    foreach (var activity in activities)
+                    {
+                        foreach (var point in activity.TrackingPoints)
+                        {
+                            if (point.Longitude is null || point.Latitude is null)
+                            {
+                                continue;
+                            }
+                            int x = 0;
+                            <Circle 
+                                Center="new(point.Longitude.Value, point.Latitude.Value)"
+                                Radius="5"
+                                Fill="rgba(255, 0, 0, 0.5)" />
+                        }
+                    }
+
+                }
+            </Shapes>
+        </Layer>
+    </Layers>
+</OpenStreetMap>
+
+@code{
+    List<Activity> activities;
+    Layer vectorLayer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        activities = await activityService.GetActivities();
+        StateHasChanged();
+    }
+}
