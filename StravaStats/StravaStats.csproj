@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Garmin.FIT.Sdk" Version="21.205.0" />
     <PackageReference Include="OpenLayers.Blazor" Version="2.5.0" />
+    <PackageReference Include="pocketken.H3" Version="4.0.0" />
   </ItemGroup>
 
 </Project>

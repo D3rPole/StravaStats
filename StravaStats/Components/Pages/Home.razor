@@ -5,48 +5,54 @@
 @inject ActivityService activityService;
 @rendermode InteractiveServer
 
-<OpenStreetMap Style="border:0px;height: 500px; width: 100%;">
+<OpenStreetMap Style="border:0px;height: 500px; width: 100%;"
+               ZoomChanged="OnZoomChanged">
     <Layers>
-        <Layer @ref="vectorLayer" LayerType="LayerType.Vector" SourceType="SourceType.Vector">
-            <Shapes>
-                <Circle Center="new(9.674681, 46.778543)" 
-                        Radius="50000" 
-                        Stroke="red" 
-                        Fill="rgba(255,0,0,0.2)" 
-                        StrokeThickness="3" />
-
-                @if (activities is not null)
-                {
-                    foreach (var activity in activities)
-                    {
-                        foreach (var point in activity.TrackingPoints)
-                        {
-                            if (point.Longitude is null || point.Latitude is null)
-                            {
-                                continue;
-                            }
-                            int x = 0;
-                            <Circle 
-                                Center="new(point.Longitude.Value, point.Latitude.Value)"
-                                Radius="5"
-                                Fill="rgba(255, 0, 0, 0.5)" />
-                        }
-                    }
-
-                }
-            </Shapes>
-        </Layer>
+        @if (activityGrid is not null)
+        {
+            int i = 0;
+            <Layer LayerType="LayerType.Heatmap"
+                   SourceType="SourceType.VectorGeoJson"
+                   Url="/api/heatmap.json"
+                   Options="@HeatmapOptions" />
+        }
     </Layers>
 </OpenStreetMap>
 
-@code{
-    List<Activity> activities;
-    Layer vectorLayer;
+@code {
+    ActivityGrid activityGrid;
+
+    private object HeatmapOptions = new
+    {
+        blur = 15,
+        radius = 8,
+        weight = "weight"
+    };
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        activities = await activityService.GetActivities();
+        activityGrid = await activityService.GetActivityGrid();
+        var geoJson = activityGrid.GetHeatmapGeoJson();
         StateHasChanged();
+    }
+
+    private void OnZoomChanged(double newZoom)
+    {
+        UpdateHeatmapOptions(newZoom);
+        StateHasChanged();
+    }
+
+    private void UpdateHeatmapOptions(double zoom)
+    {
+        double dynamicRadius = Math.Max(0.3, (zoom - 6) * 1.5);
+        double dynamicBlur = dynamicRadius * 1.5;
+
+        HeatmapOptions = new
+        {
+            blur = (int)dynamicBlur,
+            radius = (int)dynamicRadius,
+            weight = "weight"
+        };
     }
 }

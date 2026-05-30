@@ -63,5 +63,12 @@ namespace StravaStats.Services
             _activities = activities;
             return activities;
         }
+
+        public async Task<ActivityGrid> GetActivityGrid()
+        {
+            var activities = await GetActivities();
+            var grid = new ActivityGrid(activities);
+            return grid;
+        }
     }
 }

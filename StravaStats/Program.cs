@@ -23,6 +23,15 @@ app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
+app.MapGet("/api/heatmap.json", async (ActivityService activityService) =>
+{
+    var activityGrid = await activityService.GetActivityGrid();
+    var geoJsonString = activityGrid.GetHeatmapGeoJson();
+
+    // Return it with the exact content-type OpenLayers expects
+    return Results.Content(geoJsonString, "application/json");
+});
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
