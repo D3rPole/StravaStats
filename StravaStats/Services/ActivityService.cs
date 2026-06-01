@@ -47,21 +47,33 @@ namespace StravaStats.Services
                     if (e.mesg is not RecordMesg record)
                         return;
 
+                    double? lat = record.GetPositionLat();
+                    double? lon = record.GetPositionLong();
+
+                    if (lat is null || lon is null)
+                        return;
+
                     TrackingPoint trackingPoint = new()
                     {
                         TimeStamp = record.GetTimestamp()?.GetDateTime(),
                         HeartRate = record.GetHeartRate(),
                         Speed = record.GetSpeed(),
-                        Latitude = record.GetPositionLat() / 11930465.0,
-                        Longitude = record.GetPositionLong() / 11930465.0
+                        Latitude = lat.Value / 11930465.0,
+                        Longitude = lon.Value / 11930465.0,
+                        Distance = record.GetDistance() ?? 0
                     };
                     activity.TrackingPoints.Add(trackingPoint);
                 };
                 decoder.Read(fitStream);
+                //activity.Simplify();
+                //await activity.MatchRoads();
                 activities.Add(activity);
             }
-            _activities = activities;
-            return activities;
+            _activities = new();
+            _activities.Add(activities[5]);
+            _activities[0].Simplify();
+            await _activities[0].MatchRoads();
+            return _activities;
         }
 
         public async Task<ActivityGrid> GetActivityGrid()

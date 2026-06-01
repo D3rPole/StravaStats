@@ -2,13 +2,14 @@
 @using OpenLayers.Blazor
 @using Services
 @using BusinessObjects
+@using System.Globalization
 @inject ActivityService activityService;
 @rendermode InteractiveServer
 
 <OpenStreetMap Style="border:0px;height: 500px; width: 100%;"
                ZoomChanged="OnZoomChanged">
     <Layers>
-        @if (activityGrid is not null)
+        <!--@if (activityGrid is not null)
         {
             int i = 0;
             <Layer LayerType="LayerType.Heatmap"
@@ -16,11 +17,38 @@
                    Url="/api/heatmap.json"
                    Options="@HeatmapOptions" />
         }
+-->
+        <Layer LayerType="LayerType.Vector"
+               SourceType="SourceType.Vector">
+            <Shapes>
+                @if (activityGrid is not null)
+                {
+                    foreach (var activity in activityGrid)
+                    {
+                        if (activity.TrackingPoints.Count() < 2)
+                            continue;
+                    
+                        for (int i = 0; i < activity.TrackingPoints.Count() - 1; i++)
+                        {
+                            var start = activity.TrackingPoints[i];
+                            var end = activity.TrackingPoints[i + 1];
+                            var speed = (start.Speed * 50 ?? 0).ToString(CultureInfo.InvariantCulture);
+                            <Line Coordinates="@new(new double[][] {
+                                    new double[] { start.Longitude, start.Latitude },
+                                    new double[] { end.Longitude, end.Latitude } })"
+                                  StrokeThickness="3" 
+                                  Stroke="@($"rgba({speed},0,0,0.8)")" />
+                            <Circle Coordinates="@new(new double[] { start.Longitude, start.Latitude })" Radius="5" Fill="#9f9" />
+                        }
+                    }
+                }
+            </Shapes>
+        </Layer>
     </Layers>
 </OpenStreetMap>
 
 @code {
-    ActivityGrid activityGrid;
+    List<Activity> activityGrid;
 
     private object HeatmapOptions = new
     {
@@ -32,8 +60,8 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        activityGrid = await activityService.GetActivityGrid();
-        var geoJson = activityGrid.GetHeatmapGeoJson();
+        activityGrid = await activityService.GetActivities();
+        //var geoJson = activityGrid.GetHeatmapGeoJson();
         StateHasChanged();
     }
 

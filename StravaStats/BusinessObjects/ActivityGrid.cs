@@ -16,11 +16,9 @@ namespace StravaStats.BusinessObjects
             foreach (Activity activity in Activities) { 
                 foreach(TrackingPoint trackingPoint in activity.TrackingPoints)
                 {
-                    if(trackingPoint.Latitude is null || trackingPoint.Longitude is null)
-                        continue;
                     // 1. Convert your German degrees to Radians
-                    double latRadians = trackingPoint.Latitude.Value * Math.PI / 180.0;
-                    double lonRadians = trackingPoint.Longitude.Value * Math.PI / 180.0;
+                    double latRadians = trackingPoint.Latitude * Math.PI / 180.0;
+                    double lonRadians = trackingPoint.Longitude * Math.PI / 180.0;
 
                     // 2. Pass the RADIANS into the LatLng constructor
                     var latLng = new H3.Model.LatLng(latRadians, lonRadians);

@@ -3,6 +3,7 @@ using StravaStats.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -36,4 +37,23 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+AppServices.Init(app.Services);
+
 app.Run();
+
+public static class AppServices
+{
+    private static IServiceProvider _provider;
+
+    public static void Init(IServiceProvider provider) => _provider = provider;
+
+    /// <summary>
+    /// Safely resolve a Singleton service anywhere.
+    /// </summary>
+    public static T GetService<T>() => _provider.GetRequiredService<T>();
+
+    /// <summary>
+    /// Safely resolve a Scoped or Transient service by creating a temporary scope.
+    /// </summary>
+    public static IServiceScope CreateScope() => _provider.CreateScope();
+}
