@@ -72,7 +72,7 @@ namespace StravaStats.Services
             _activities = new();
             _activities.Add(activities[5]);
             _activities[0].Simplify();
-            await _activities[0].MatchRoads();
+            await _activities[0].MatchRoadsValhalla();
             return _activities;
         }
 

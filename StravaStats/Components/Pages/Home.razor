@@ -25,13 +25,13 @@
                 {
                     foreach (var activity in activityGrid)
                     {
-                        if (activity.TrackingPoints.Count() < 2)
+                        if (activity.SimplifiedTrackingPoint.Count() < 2)
                             continue;
                     
-                        for (int i = 0; i < activity.TrackingPoints.Count() - 1; i++)
+                        for (int i = 0; i < activity.SimplifiedTrackingPoint.Count() - 1; i++)
                         {
-                            var start = activity.TrackingPoints[i];
-                            var end = activity.TrackingPoints[i + 1];
+                            var start = activity.SimplifiedTrackingPoint[i];
+                            var end = activity.SimplifiedTrackingPoint[i + 1];
                             var speed = (start.Speed * 50 ?? 0).ToString(CultureInfo.InvariantCulture);
                             <Line Coordinates="@new(new double[][] {
                                     new double[] { start.Longitude, start.Latitude },

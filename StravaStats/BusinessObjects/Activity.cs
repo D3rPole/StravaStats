@@ -1,43 +1,74 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
+using PolylinerNet;
 
 namespace StravaStats.BusinessObjects
 {
     public class Activity
     {
         public List<TrackingPoint> TrackingPoints { get; set; } = [];
+        public List<TrackingPoint> SimplifiedTrackingPoint { get; set; } = [];
+        public ValhallaResponse ValhallaResponse { get; set; }
 
         public void Simplify()
         {
-            TrackingPoints = DouglasPeucker(TrackingPoints, 0.00001);
+            SimplifiedTrackingPoint = DouglasPeucker(TrackingPoints, 0.00001);
         }
-        public async Task MatchRoads()
+
+        public async Task MatchRoadsValhalla()
         {
             var configuration = AppServices.GetService<IConfiguration>();
-            var pointsList = TrackingPoints.Chunk(100).ToList();
-            foreach (var points in pointsList)
+            HttpClient client = new();
+            var response = await client.PostAsJsonAsync($"{configuration["ValhallaServer"]}/trace_attributes", new
             {
-                string coordinates = string.Join(";", points.Select(tp => $"{tp.Longitude.ToString(CultureInfo.InvariantCulture)},{tp.Latitude.ToString(CultureInfo.InvariantCulture)}"));
-                HttpClient client = new();
-                var response = await client.GetAsync($"{configuration["OsrmServer"]}/match/v1/foot/{coordinates}?annotations=nodes,distance");
-                if (!response.IsSuccessStatusCode)
+                shape = TrackingPoints.Select(tp => new { lat = tp.Latitude, lon = tp.Longitude }).ToArray(),
+                costing = "pedestrian",
+                shape_match = "map_snap",
+                filters = new
                 {
-                    Console.WriteLine($"OSRM request failed with status code: {response.StatusCode}");
-                    Console.WriteLine(await response.Content.ReadAsStringAsync());
-                    continue;
+                    attributes = new string[] {
+                        "edge.way_id",
+                        "edge.length",
+                        "edge.id",
+                        "edge.elapsed_time",
+                        "matched.point",
+                        "matched.type",
+                        "matched.edge_index",
+                        "matched.distance_along_edge",
+                        "shape",
+                        "edge.begin_shape_index",
+                        "edge.end_shape_index",
+                        "edge.begin_osm_node_id",
+                        "edge.end_osm_node_id",
+                        "node.intersecting_edge.begin_heading",
+                        "node.intersecting_edge.from_edge_name_consistency",
+                        "node.intersecting_edge.to_edge_name_consistency",
+                        "node.intersecting_edge.driveability",
+                        "node.intersecting_edge.cyclability",
+                        "node.intersecting_edge.walkability",
+                        "node.intersecting_edge.use",
+                        "node.intersecting_edge.road_class",
+                        "node.intersecting_edge.lane_count",
+                        "node.elapsed_time",
+                        "node.admin_index",
+                        "node.type",
+                        "node.traffic_signal",
+                        "node.fork",
+                        "node.time_zone"
+                    },
+                    action = "include"
                 }
-                var osrm = await response.Content.ReadFromJsonAsync<OsrmMatchResponse>();
-
-                for(int i = 0; i < points.Count(); i++)
-                {
-                    if (osrm.tracepoints[i] != null)
-                    {
-                        points[i].Latitude = osrm.tracepoints[i].location[1];
-                        points[i].Longitude = osrm.tracepoints[i].location[0];
-                    }
-                }
+            });
+            string r = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Valhalla request failed with status code: {response.StatusCode}");
+                Console.WriteLine(await response.Content.ReadAsStringAsync());
+                return;
             }
+            ValhallaResponse = await response.Content.ReadFromJsonAsync<ValhallaResponse>();
         }
+
 
         private List<TrackingPoint> DouglasPeucker(List<TrackingPoint> points, double tolerance)
         {
@@ -62,7 +93,7 @@ namespace StravaStats.BusinessObjects
                 var right = DouglasPeucker(points.GetRange(index, points.Count - index), tolerance);
                 return left.Take(left.Count - 1).Concat(right).ToList();
             }
-            else if (Distance(start, end) > 1)
+            /*else if (Distance(start, end) > 1)
             {
                 // Force a split right down the middle index of the array to break up the straight line evenly
                 int midIndex = points.Count / 2;
@@ -70,7 +101,7 @@ namespace StravaStats.BusinessObjects
                 var left = DouglasPeucker(points.GetRange(0, midIndex + 1), tolerance);
                 var right = DouglasPeucker(points.GetRange(midIndex, points.Count - midIndex), tolerance);
                 return left.Take(left.Count - 1).Concat(right).ToList();
-            }
+            }*/
             else
             {
                 return new List<TrackingPoint> { start, end };
