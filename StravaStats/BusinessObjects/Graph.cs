@@ -1,41 +1,86 @@
-﻿namespace StravaStats.BusinessObjects
+﻿using PolylinerNet;
+using System.Globalization;
+using System.Security.Cryptography;
+
+namespace StravaStats.BusinessObjects
 {
     public class Graph
     {
-        List<Edge> edges = [];
-        Dictionary<string, Node> nodes = [];
+        public Dictionary<(string, string), Edge> Edges = [];
+        public Dictionary<string, Node> Nodes = [];
 
-        public Graph(List<ValhallaResponse> valhallaResponses) 
+        public Graph(List<Activity> activities)
         {
-                foreach (var valhallaResponse in valhallaResponses)
+            int brokenEdgeCount = 0;
+            foreach (var activity in activities)
+            {
+                var valhallaResponse = activity.ValhallaResponse;
+                foreach (var node in valhallaResponse.NodeCoords)
                 {
-                    foreach (var edge in valhallaResponse.Edges)
+                    string key = GetNodeKey(node);
+                    if (!Nodes.ContainsKey(key))
+                        Nodes.Add(key, new Node { Latitude = node.Latitude, Longitude = node.Longitude });
+                }
+
+                foreach (var edge in valhallaResponse.Edges)
+                {
+                    var crossedNodes = valhallaResponse.NodeCoords.Skip(edge.BeginShapeIndex).Take(edge.EndShapeIndex - edge.BeginShapeIndex + 1).ToList();
+
+                    for (int i = 1; i < crossedNodes.Count; i++)
                     {
-                        var startNode = new Node
+                        var startNode = GetNodeKey(crossedNodes[i - 1]);
+                        var endNode = GetNodeKey(crossedNodes[i]);
+
+                        if (Edges.ContainsKey((startNode, endNode)) || Edges.ContainsKey((endNode, startNode)))
+                            continue;
+
+                        Edges.Add((startNode, endNode), new Edge
                         {
-                            Latitude = edge.EndNode.ElapsedCost, // Placeholder, replace with actual latitude
-                            Longitude = edge.EndNode.ElapsedTime // Placeholder, replace with actual longitude
-                        };
-                        var endNode = new Node
-                        {
-                            Latitude = edge.EndNode.ElapsedCost, // Placeholder, replace with actual latitude
-                            Longitude = edge.EndNode.ElapsedTime // Placeholder, replace with actual longitude
-                        };
-    
-                        /*if (!nodes.ContainsKey(edge.))
-                            nodes[startNode.Id.ToString()] = startNode;
-                        if (!nodes.ContainsKey(endNode.Id.ToString()))
-                            nodes[endNode.Id.ToString()] = endNode;
-    
-                        edges.Add(new Edge
-                        {
-                            StartNodeId = startNode.Id,
-                            EndNodeId = endNode.Id,
-                            Length = edge.Length,
+                            StartNodeKey = startNode,
+                            EndNodeKey = endNode,
                             WayId = edge.WayId
-                        });*/
+                        });
                     }
+                }
+
+                List<long> edgesCrossed = [];
+                for (int i = 0; i < valhallaResponse.MatchedPoints.Count; i++)
+                {
+                    var match = valhallaResponse.MatchedPoints[i];
+                    var edgeIndex = match.EdgeIndex;
+                    if (edgeIndex == ulong.MaxValue)
+                    {
+                        brokenEdgeCount++;
+                        continue;
+                    }
+
+                    var point = activity.TrackingPoints[i];
+
+                    var id = valhallaResponse.Edges[(int)edgeIndex].WayId;
+
+                    var edges = Edges.Where(e => e.Value.WayId == id).ToList();
+
+                    bool passed = edgesCrossed.Any(t => t == id);
+                    if(!passed)
+                        edgesCrossed.Add(id);
+
+                    foreach (var edge in edges)
+                    {
+                        edge.Value.TotalSpeed += point.Speed ?? 0;
+                        edge.Value.TotalHeartRate += point.HeartRate ?? 0;
+                        edge.Value.DataPoints++;
+                        if(!passed)
+                            edge.Value.PassedAmount++;
+                    }
+                }
             }
+            Console.WriteLine(Edges.Where(e => e.Value.WayId == 30723352).Count());
+            Console.WriteLine(brokenEdgeCount);
+        }
+
+        private string GetNodeKey(PolylinePoint node)
+        {
+            return $"{node.Latitude.ToString("F6")},{node.Longitude.ToString("F6")}";
         }
     }
 }

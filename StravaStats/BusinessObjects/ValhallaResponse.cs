@@ -1,4 +1,6 @@
 ﻿using System.Text.Json.Serialization;
+using PolylinerNet;
+using StravaStats.CustomPolyliner;
 
 namespace StravaStats.BusinessObjects
 {
@@ -16,18 +18,36 @@ namespace StravaStats.BusinessObjects
 
         [JsonPropertyName("units")]
         public string Units { get; set; } = string.Empty;
+
+        [JsonIgnore]
+        public List<PolylinePoint> NodeCoords
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(Shape))
+                    return [];
+
+                if (field is null)
+                    field = new ValhallaPolyliner().Decode(Shape);
+
+                return field;
+            }
+        }
     }
 
     public class ValhallaEdge
     {
-        [JsonPropertyName("end_node")]
-        public ValhallaEdgeNode EndNode { get; set; } = new();
-
         [JsonPropertyName("id")]
         public long Id { get; set; }
 
         [JsonPropertyName("length")]
         public double Length { get; set; }
+
+        [JsonPropertyName("end_shape_index")]
+        public int EndShapeIndex { get; set; }
+
+        [JsonPropertyName("begin_shape_index")]
+        public int BeginShapeIndex { get; set; }
 
         [JsonPropertyName("source_percent_along")]
         public double SourcePercentAlong { get; set; }
@@ -37,15 +57,6 @@ namespace StravaStats.BusinessObjects
 
         [JsonPropertyName("way_id")]
         public long WayId { get; set; }
-    }
-
-    public class ValhallaEdgeNode
-    {
-        [JsonPropertyName("elapsed_cost")]
-        public double ElapsedCost { get; set; }
-
-        [JsonPropertyName("elapsed_time")]
-        public double ElapsedTime { get; set; }
     }
 
     public class VallhallaMatchedPoint

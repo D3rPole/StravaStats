@@ -15,7 +15,7 @@ namespace StravaStats.BusinessObjects
             SimplifiedTrackingPoint = DouglasPeucker(TrackingPoints, 0.00001);
         }
 
-        public async Task MatchRoadsValhalla()
+        public async Task MatchRoads()
         {
             var configuration = AppServices.GetService<IConfiguration>();
             HttpClient client = new();
@@ -38,23 +38,8 @@ namespace StravaStats.BusinessObjects
                         "shape",
                         "edge.begin_shape_index",
                         "edge.end_shape_index",
-                        "edge.begin_osm_node_id",
-                        "edge.end_osm_node_id",
-                        "node.intersecting_edge.begin_heading",
-                        "node.intersecting_edge.from_edge_name_consistency",
-                        "node.intersecting_edge.to_edge_name_consistency",
-                        "node.intersecting_edge.driveability",
-                        "node.intersecting_edge.cyclability",
-                        "node.intersecting_edge.walkability",
-                        "node.intersecting_edge.use",
-                        "node.intersecting_edge.road_class",
-                        "node.intersecting_edge.lane_count",
-                        "node.elapsed_time",
-                        "node.admin_index",
-                        "node.type",
-                        "node.traffic_signal",
-                        "node.fork",
-                        "node.time_zone"
+                        "edge.begin_node_id",
+                        "edge.end_node_id",
                     },
                     action = "include"
                 }

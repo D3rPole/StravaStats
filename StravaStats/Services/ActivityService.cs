@@ -65,14 +65,10 @@ namespace StravaStats.Services
                     activity.TrackingPoints.Add(trackingPoint);
                 };
                 decoder.Read(fitStream);
-                //activity.Simplify();
-                //await activity.MatchRoads();
+                await activity.MatchRoads();
                 activities.Add(activity);
             }
-            _activities = new();
-            _activities.Add(activities[5]);
-            _activities[0].Simplify();
-            await _activities[0].MatchRoadsValhalla();
+            _activities = activities;
             return _activities;
         }
 

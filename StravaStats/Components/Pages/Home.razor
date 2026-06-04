@@ -6,40 +6,19 @@
 @inject ActivityService activityService;
 @rendermode InteractiveServer
 
-<OpenStreetMap Style="border:0px;height: 500px; width: 100%;"
-               ZoomChanged="OnZoomChanged">
+<OpenStreetMap Style="border:0px;height: 500px; width: 100%;">
     <Layers>
-        <!--@if (activityGrid is not null)
-        {
-            int i = 0;
-            <Layer LayerType="LayerType.Heatmap"
-                   SourceType="SourceType.VectorGeoJson"
-                   Url="/api/heatmap.json"
-                   Options="@HeatmapOptions" />
-        }
--->
         <Layer LayerType="LayerType.Vector"
                SourceType="SourceType.Vector">
             <Shapes>
-                @if (activityGrid is not null)
+                @if (graph is not null)
                 {
-                    foreach (var activity in activityGrid)
+                    foreach (var edge in graph.Edges)
                     {
-                        if (activity.SimplifiedTrackingPoint.Count() < 2)
-                            continue;
-                    
-                        for (int i = 0; i < activity.SimplifiedTrackingPoint.Count() - 1; i++)
-                        {
-                            var start = activity.SimplifiedTrackingPoint[i];
-                            var end = activity.SimplifiedTrackingPoint[i + 1];
-                            var speed = (start.Speed * 50 ?? 0).ToString(CultureInfo.InvariantCulture);
-                            <Line Coordinates="@new(new double[][] {
-                                    new double[] { start.Longitude, start.Latitude },
-                                    new double[] { end.Longitude, end.Latitude } })"
-                                  StrokeThickness="3" 
-                                  Stroke="@($"rgba({speed},0,0,0.8)")" />
-                            <Circle Coordinates="@new(new double[] { start.Longitude, start.Latitude })" Radius="5" Fill="#9f9" />
-                        }
+                        <Line Coordinates="new([[graph.Nodes[edge.Value.StartNodeKey].Longitude, graph.Nodes[edge.Value.StartNodeKey].Latitude],
+                                                [graph.Nodes[edge.Value.EndNodeKey].Longitude, graph.Nodes[edge.Value.EndNodeKey].Latitude]])"
+                                                Stroke="@($"rgba({(edge.Value.AverageSpeed * 30).ToString(CultureInfo.InvariantCulture)},0,0,1)")"
+                                            StrokeThickness="4" />
                     }
                 }
             </Shapes>
@@ -48,39 +27,13 @@
 </OpenStreetMap>
 
 @code {
-    List<Activity> activityGrid;
-
-    private object HeatmapOptions = new
-    {
-        blur = 15,
-        radius = 8,
-        weight = "weight"
-    };
+    Graph graph;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        activityGrid = await activityService.GetActivities();
-        //var geoJson = activityGrid.GetHeatmapGeoJson();
+        var activities = await activityService.GetActivities();
+        graph = new(activities);
         StateHasChanged();
-    }
-
-    private void OnZoomChanged(double newZoom)
-    {
-        UpdateHeatmapOptions(newZoom);
-        StateHasChanged();
-    }
-
-    private void UpdateHeatmapOptions(double zoom)
-    {
-        double dynamicRadius = Math.Max(0.3, (zoom - 6) * 1.5);
-        double dynamicBlur = dynamicRadius * 1.5;
-
-        HeatmapOptions = new
-        {
-            blur = (int)dynamicBlur,
-            radius = (int)dynamicRadius,
-            weight = "weight"
-        };
     }
 }
