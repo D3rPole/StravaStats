@@ -1,4 +1,5 @@
 ﻿using PolylinerNet;
+using StravaStats.Helper;
 using System.Globalization;
 using System.Security.Cryptography;
 
@@ -6,7 +7,8 @@ namespace StravaStats.BusinessObjects
 {
     public class Graph
     {
-        public Dictionary<(string, string, int), Edge> Edges = [];
+        public Dictionary<(string, string), Edge> Edges = [];
+        public Dictionary<string, List<string>> AdjacencyList = [];
         public Dictionary<string, Node> Nodes = [];
 
         public Graph(List<Activity> activities)
@@ -20,9 +22,7 @@ namespace StravaStats.BusinessObjects
                 var valhallaResponse = activity.ValhallaResponse;
                 foreach (var node in valhallaResponse.NodeCoords)
                 {
-                    string key = GetNodeKey(node);
-                    if (!Nodes.ContainsKey(key))
-                        Nodes.Add(key, new Node { Latitude = node.Latitude, Longitude = node.Longitude });
+                    AddNode(new Node { Latitude = node.Latitude, Longitude = node.Longitude });
                 }
 
                 foreach (var edge in valhallaResponse.Edges)
@@ -31,22 +31,40 @@ namespace StravaStats.BusinessObjects
 
                     for (int i = 1; i < crossedNodes.Count; i++)
                     {
-                        var startNode = GetNodeKey(crossedNodes[i - 1]);
-                        var endNode = GetNodeKey(crossedNodes[i]);
+                        var startNodeKey = GetNodeKey(crossedNodes[i - 1]);
+                        var endNodeKey = GetNodeKey(crossedNodes[i]);
 
-                        if (Edges.ContainsKey((startNode, endNode, 0)) || Edges.ContainsKey((endNode, startNode, 0)))
-                            continue;
+                        var startNode = Nodes[startNodeKey];
+                        var endNode = Nodes[endNodeKey];
 
-                        Edges.Add((startNode, endNode, 0), new Edge
+                        double nodeDistance = GeoUtils.CalculateDistance(startNode, endNode);
+
+                        if (nodeDistance < maxNodeDistance)
                         {
-                            StartNodeKey = startNode,
-                            EndNodeKey = endNode,
-                            WayId = edge.WayId
-                        });
+                            AddEdge(startNode, endNode);
+                        }
+                        else
+                        {
+                            int subDevisionCount = (int)Math.Ceiling(nodeDistance / maxNodeDistance);
+                            double step = 1.0 / subDevisionCount;
+                            var currentNode = startNode;
+
+                            for (int j = 1; j < subDevisionCount; j++)
+                            {
+                                var newNode = GeoUtils.Interpolate(startNode, endNode, step * j);
+
+                                AddNode(newNode);
+
+                                AddEdge(currentNode, newNode);
+                                currentNode = newNode;
+                            }
+
+                            AddEdge(currentNode, endNode);
+                        }
                     }
                 }
 
-                List<long> edgesCrossed = [];
+                /*List<long> edgesCrossed = [];
                 for (int i = 0; i < valhallaResponse.MatchedPoints.Count; i++)
                 {
                     var match = valhallaResponse.MatchedPoints[i];
@@ -75,10 +93,92 @@ namespace StravaStats.BusinessObjects
                         if(!passed)
                             edge.Value.PassedAmount++;
                     }
+                }*/
+            }
+        }
+
+        public Graph(Graph other, double nodeDistance)
+        {
+            var intersections = other.AdjacencyList.Where(t => t.Value.Count > 2).ToDictionary();
+        }
+
+
+        public void AddNode(double lat, double lon)
+        {
+            AddNode(new Node()
+            {
+                Latitude = lat,
+                Longitude = lon
+            });
+        }
+
+        public void AddNode(Node node)
+        {
+            if (Nodes.ContainsKey(node.GetKey()))
+                return;
+            Nodes.Add(node.GetKey(), node);
+        }
+
+        public void AddEdge(Node startNode, Node endNode)
+        {
+            AddEdge(startNode.GetKey(), endNode.GetKey());
+        }
+
+        public void AddEdge(string startNodeKey, string endNodeKey)
+        {
+            if (Edges.ContainsKey((startNodeKey, endNodeKey)) || Edges.ContainsKey((endNodeKey, startNodeKey)))
+                return;
+            Edges.Add((startNodeKey, endNodeKey), new Edge()
+            {
+                StartNodeKey = startNodeKey,
+                EndNodeKey = endNodeKey
+            });
+
+            if (AdjacencyList.ContainsKey(startNodeKey))
+                AdjacencyList[startNodeKey].Add(endNodeKey);
+            else
+                AdjacencyList.Add(startNodeKey, new List<string> { endNodeKey });
+
+            if (AdjacencyList.ContainsKey(endNodeKey))
+                AdjacencyList[endNodeKey].Add(startNodeKey);
+            else
+                AdjacencyList.Add(endNodeKey, new List<string> { startNodeKey });
+        }
+
+        public Edge? GetEdge(Node nodeA, Node nodeB)
+        {
+            return GetEdge(nodeA.GetKey(), nodeB.GetKey());
+        }
+
+        public Edge? GetEdge(string nodeAKey, string nodeBKey)
+        {
+            if (Edges.ContainsKey((nodeAKey, nodeBKey)))
+                return Edges[(nodeAKey, nodeBKey)];
+            else if (Edges.ContainsKey((nodeBKey, nodeAKey)))
+                return Edges[(nodeBKey, nodeAKey)];
+            else
+                return null;
+        }
+
+        public List<Edge> GetEdgesForNode(string nodeKey)
+        {
+            List<Edge> edges = [];
+            if (AdjacencyList.ContainsKey(nodeKey))
+            {
+                foreach (var adjacentNodeKey in AdjacencyList[nodeKey])
+                {
+                    if (Edges.ContainsKey((nodeKey, adjacentNodeKey)))
+                        edges.Add(Edges[(nodeKey, adjacentNodeKey)]);
+                    else if (Edges.ContainsKey((adjacentNodeKey, nodeKey)))
+                        edges.Add(Edges[(adjacentNodeKey, nodeKey)]);
                 }
             }
-            Console.WriteLine(Edges.Where(e => e.Value.WayId == 30723352).Count());
-            Console.WriteLine(brokenEdgeCount);
+            return edges;
+        }
+
+        private string GetNodeKey(Node node)
+        {
+            return $"{node.Latitude.ToString("F6")},{node.Longitude.ToString("F6")}";
         }
 
         private string GetNodeKey(PolylinePoint node)

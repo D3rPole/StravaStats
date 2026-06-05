@@ -5,7 +5,7 @@ namespace StravaStats.Helper;
 
 public class GeoUtils
 {
-    private const double EarthRadiusKm = 6371.0;
+    private const double EarthRadius = 6371000.0;
 
     public static double CalculateDistance(Node startNode, Node endNode)
     {
@@ -23,7 +23,7 @@ public class GeoUtils
                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
 
         double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-        return EarthRadiusKm * c;
+        return EarthRadius * c;
     }
 
     public static Node Interpolate(Node startNode, Node endNode, double fraction)

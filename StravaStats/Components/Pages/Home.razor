@@ -17,7 +17,7 @@
                     {
                         <Line Coordinates="new([[graph.Nodes[edge.Value.StartNodeKey].Longitude, graph.Nodes[edge.Value.StartNodeKey].Latitude],
                                                 [graph.Nodes[edge.Value.EndNodeKey].Longitude, graph.Nodes[edge.Value.EndNodeKey].Latitude]])"
-                                                Stroke="@($"rgba({(edge.Value.AverageSpeed * 30).ToString(CultureInfo.InvariantCulture)},0,0,1)")"
+                                                Stroke="@($"rgba({(int)(Random.Shared.NextDouble() * 255)},{(int)(Random.Shared.NextDouble() * 255)},{(int)(Random.Shared.NextDouble() * 255)},1)")"
                                             StrokeThickness="4" />
                     }
                 }
