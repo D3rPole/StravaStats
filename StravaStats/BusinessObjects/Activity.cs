@@ -6,6 +6,7 @@ namespace StravaStats.BusinessObjects
 {
     public class Activity
     {
+        public string Hash { get; set; }
         public List<TrackingPoint> TrackingPoints { get; set; } = [];
         public List<TrackingPoint> SimplifiedTrackingPoint { get; set; } = [];
         public ValhallaResponse ValhallaResponse { get; set; }
@@ -52,6 +53,7 @@ namespace StravaStats.BusinessObjects
                 return;
             }
             ValhallaResponse = await response.Content.ReadFromJsonAsync<ValhallaResponse>();
+
         }
 
 

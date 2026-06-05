@@ -6,11 +6,14 @@ namespace StravaStats.BusinessObjects
 {
     public class Graph
     {
-        public Dictionary<(string, string), Edge> Edges = [];
+        public Dictionary<(string, string, int), Edge> Edges = [];
         public Dictionary<string, Node> Nodes = [];
 
         public Graph(List<Activity> activities)
         {
+            var configiration = AppServices.GetService<IConfiguration>();
+            double maxNodeDistance = double.Parse(configiration["MaxNodeDistance"]);
+
             int brokenEdgeCount = 0;
             foreach (var activity in activities)
             {
@@ -31,10 +34,10 @@ namespace StravaStats.BusinessObjects
                         var startNode = GetNodeKey(crossedNodes[i - 1]);
                         var endNode = GetNodeKey(crossedNodes[i]);
 
-                        if (Edges.ContainsKey((startNode, endNode)) || Edges.ContainsKey((endNode, startNode)))
+                        if (Edges.ContainsKey((startNode, endNode, 0)) || Edges.ContainsKey((endNode, startNode, 0)))
                             continue;
 
-                        Edges.Add((startNode, endNode), new Edge
+                        Edges.Add((startNode, endNode, 0), new Edge
                         {
                             StartNodeKey = startNode,
                             EndNodeKey = endNode,
