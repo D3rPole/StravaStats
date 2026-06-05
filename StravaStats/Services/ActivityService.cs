@@ -25,11 +25,12 @@ namespace StravaStats.Services
                 return [];
             }
 
-            var files = Directory.GetFiles(activitiesPath, "*.gz");
+            var files = Directory.GetFiles(activitiesPath, "*.fit.gz");
             List<BusinessObjects.Activity> activities = [];
             foreach (var file in files)
             {
                 BusinessObjects.Activity activity = new();
+                activity.FileName = Path.GetFileNameWithoutExtension(file);
                 using var fileStream = System.IO.File.OpenRead(file);
                 using var gzipStream = new GZipStream(fileStream, CompressionMode.Decompress);
 

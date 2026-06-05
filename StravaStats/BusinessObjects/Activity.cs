@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using PolylinerNet;
+using System.Text.Json;
 
 namespace StravaStats.BusinessObjects
 {
     public class Activity
     {
-        public string Hash { get; set; }
+        public string FileName { get; set; }
         public List<TrackingPoint> TrackingPoints { get; set; } = [];
         public List<TrackingPoint> SimplifiedTrackingPoint { get; set; } = [];
         public ValhallaResponse ValhallaResponse { get; set; }
@@ -19,6 +20,18 @@ namespace StravaStats.BusinessObjects
         public async Task MatchRoads()
         {
             var configuration = AppServices.GetService<IConfiguration>();
+            string? activitiesPath = configuration["ActivitiesPath"];
+            string cacheDir = Path.Combine(activitiesPath, "cache");
+            string cacheFilePath = Path.Combine(cacheDir, $"{FileName}.json");
+
+            if(File.Exists(cacheFilePath))
+            {
+                string cachedContent = await File.ReadAllTextAsync(cacheFilePath);
+                ValhallaResponse = JsonSerializer.Deserialize<ValhallaResponse>(cachedContent);
+                return;
+            }
+
+
             HttpClient client = new();
             var response = await client.PostAsJsonAsync($"{configuration["ValhallaServer"]}/trace_attributes", new
             {
@@ -45,7 +58,7 @@ namespace StravaStats.BusinessObjects
                     action = "include"
                 }
             });
-            string r = await response.Content.ReadAsStringAsync();
+
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine($"Valhalla request failed with status code: {response.StatusCode}");
@@ -53,6 +66,14 @@ namespace StravaStats.BusinessObjects
                 return;
             }
             ValhallaResponse = await response.Content.ReadFromJsonAsync<ValhallaResponse>();
+
+            if (!Directory.Exists(cacheDir))
+            {
+                Directory.CreateDirectory(cacheDir);
+            }
+
+            string json = JsonSerializer.Serialize(ValhallaResponse);
+            File.WriteAllText(cacheFilePath, json);
 
         }
 
