@@ -99,7 +99,105 @@ namespace StravaStats.BusinessObjects
 
         public Graph(Graph other, double nodeDistance)
         {
+            var ways = other.GetWays();
             var intersections = other.AdjacencyList.Where(t => t.Value.Count > 2).ToDictionary();
+
+            foreach (var way in ways)
+            {
+                var edgeList = way.Values.ToList();
+                if (edgeList.Count == 0)
+                    continue;
+
+                var startNode = other.Nodes[intersections.Where(i => edgeList.Any(e => e.StartNodeKey == i.Key || e.EndNodeKey == i.Key)).First().Key];
+                var visitedNodes = new HashSet<string> { startNode.GetKey() };
+                var edge = edgeList.Where(e => e.StartNodeKey == startNode.GetKey() || e.EndNodeKey == startNode.GetKey()).First();
+                double dist = 0;
+                while (true)
+                {
+                    visitedNodes.Add(edge.StartNodeKey);
+                    visitedNodes.Add(edge.EndNodeKey);
+
+                    var nodeA = edge.StartNodeKey;
+                    var nodeB = edge.EndNodeKey;
+                    double length = GeoUtils.CalculateEdgeLength(edge, other.Nodes);
+                    dist += length;
+
+                    edge = edgeList.Where(e => (
+                        (
+                            (
+                            edge.StartNodeKey == e.StartNodeKey ||
+                            edge.StartNodeKey == e.EndNodeKey)
+                            && !visitedNodes.Contains(e.StartNodeKey)
+                        )
+                        ||
+                        (
+                            (
+                            edge.EndNodeKey == e.StartNodeKey ||
+                            edge.EndNodeKey == e.EndNodeKey)
+                            && !visitedNodes.Contains(e.EndNodeKey)
+                        )
+                    )).FirstOrDefault();
+
+                    if (edge is null)
+                        break;
+
+                    if (dist < nodeDistance || visitedNodes.Count == edgeList.Count + 1)
+                        continue;
+                    dist = 0;
+
+                    if(edge.EndNodeKey == nodeA || edge.StartNodeKey == nodeA)
+                    {
+                        AddNode(startNode);
+                        AddNode(other.Nodes[nodeA]);
+                        AddEdge(startNode.GetKey(), nodeA);
+                        startNode = other.Nodes[nodeA];
+                    }
+                    else if (edge.EndNodeKey == nodeB || edge.StartNodeKey == nodeB)
+                    {
+                        AddNode(startNode);
+                        AddNode(other.Nodes[nodeB]);
+                        AddEdge(startNode.GetKey(), nodeB);
+                        startNode = other.Nodes[nodeB];
+                    }
+                }
+            }
+        }
+
+        public List<Dictionary<(string, string), Edge>> GetWays()
+        {
+            var intersections = AdjacencyList.Where(t => t.Value.Count > 2).ToDictionary();
+            var visitedEdges = new HashSet<(string, string)>();
+            var ways = new List<Dictionary<(string, string), Edge>>();
+            foreach (var intersection in intersections)
+            {
+                foreach (var adjacentNodeKey in intersection.Value)
+                {
+                    if (visitedEdges.Contains((intersection.Key, adjacentNodeKey)) || visitedEdges.Contains((adjacentNodeKey, intersection.Key)))
+                        continue;
+                    var way = new Dictionary<(string, string), Edge>();
+                    var currentNodeKey = adjacentNodeKey;
+                    var previousNodeKey = intersection.Key;
+                    while (true)
+                    {
+                        var edge = GetEdge(previousNodeKey, currentNodeKey);
+                        if (edge is null)
+                            break;
+                        way.Add((edge.StartNodeKey, edge.EndNodeKey), edge);
+                        visitedEdges.Add((previousNodeKey, currentNodeKey));
+                        if (AdjacencyList[currentNodeKey].Count != 2) // stop at next intersection
+                            break;
+                        // move to the next node
+                        var nextNodeKeys = AdjacencyList[currentNodeKey].Where(k => k != previousNodeKey).ToList();
+                        if (nextNodeKeys.Count == 0)
+                            break; // dead end
+                        previousNodeKey = currentNodeKey;
+                        currentNodeKey = nextNodeKeys[0];
+                    }
+                    if (way.Count > 0)
+                        ways.Add(way);
+                }
+            }
+            return ways;
         }
 
 

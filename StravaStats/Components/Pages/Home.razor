@@ -6,7 +6,7 @@
 @inject ActivityService activityService;
 @rendermode InteractiveServer
 
-<OpenStreetMap Style="border:0px;height: 500px; width: 100%;">
+<OpenStreetMap Style="border:0px;height: 500px; width: 100%;" ZoomChanged="OnZoomChanged">
     <Layers>
         <Layer LayerType="LayerType.Vector"
                SourceType="SourceType.Vector">
@@ -15,10 +15,9 @@
                 {
                     foreach (var edge in graph.Edges)
                     {
-                        <Line Coordinates="new([[graph.Nodes[edge.Value.StartNodeKey].Longitude, graph.Nodes[edge.Value.StartNodeKey].Latitude],
-                                                [graph.Nodes[edge.Value.EndNodeKey].Longitude, graph.Nodes[edge.Value.EndNodeKey].Latitude]])"
-                                                Stroke="@($"rgba({(int)(Random.Shared.NextDouble() * 255)},{(int)(Random.Shared.NextDouble() * 255)},{(int)(Random.Shared.NextDouble() * 255)},1)")"
-                                            StrokeThickness="4" />
+                        <Line Coordinates="new([[graph.Nodes[edge.Value.StartNodeKey].Longitude, graph.Nodes[edge.Value.StartNodeKey].Latitude],                                                                                                                                                        [graph.Nodes[edge.Value.EndNodeKey].Longitude, graph.Nodes[edge.Value.EndNodeKey].Latitude]])"
+                          Stroke="@($"rgba(1,0,0,1)")"
+                          StrokeThickness="4" />
                     }
                 }
             </Shapes>
@@ -28,12 +27,72 @@
 
 @code {
     Graph graph;
+    Graph graphFullRes;
+    Graph graph20mRes;
+    Graph graph40mRes;
+    Graph graph80mRes;
+    Graph graph160mRes;
+
+    private int stringToByteHash(string str)
+    {
+        int hash = 5381; // A magic prime number to start with
+
+        for (int i = 0; i < str.Count(); i++)
+        {
+            // hash * 33 + string character code
+            hash = (hash * 33) + str[i];
+        }
+
+        // Force it into a single unsigned 8-bit byte (0-255)
+        return (int)(hash & 0xFF);
+    }
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
         var activities = await activityService.GetActivities();
-        graph = new(activities);
+        graphFullRes = new(activities);
+        graph20mRes = new(graphFullRes, 20);
+        graph40mRes = new(graphFullRes, 40);
+        graph80mRes = new(graphFullRes, 80);
+        graph160mRes = new(graphFullRes, 160);
+        graph = graph160mRes;
+    }
+
+    private CancellationTokenSource _zoomCts = new();
+
+    public async void OnZoomChanged(double zoomLevel)
+    {
+        // Cancel any pending zoom update
+        await _zoomCts.CancelAsync();
+        _zoomCts = new CancellationTokenSource();
+        var token = _zoomCts.Token;
+
+        try
+        {
+            // Small delay to let rapid zoom events settle
+            await Task.Delay(150, token);
+
+            var targetGraph = zoomLevel < 8 ? graph160mRes
+                            : zoomLevel < 10 ? graph80mRes
+                            : zoomLevel < 12 ? graph40mRes
+                            : zoomLevel < 14 ? graph20mRes
+                            : graphFullRes;
+
+            SetGraph(targetGraph);
+        }
+        catch (TaskCanceledException)
+        {
+            // A newer zoom event arrived — discard this one
+        }
+    }
+
+    private void SetGraph(Graph newGraph)
+    {
+        if (graph == newGraph)
+            return;
+
+        graph = newGraph;
         StateHasChanged();
     }
 }

@@ -7,6 +7,13 @@ public class GeoUtils
 {
     private const double EarthRadius = 6371000.0;
 
+    public static double CalculateEdgeLength(Edge edge, Dictionary<string, Node> nodes)
+    {
+        var startNode = nodes[edge.StartNodeKey];
+        var endNode = nodes[edge.EndNodeKey];
+        return CalculateDistance(startNode, endNode);
+    }
+
     public static double CalculateDistance(Node startNode, Node endNode)
     {
         double lat1 = startNode.Latitude;
