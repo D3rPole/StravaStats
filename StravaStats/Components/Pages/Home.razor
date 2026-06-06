@@ -4,110 +4,73 @@
 @using BusinessObjects
 @using Helper
 @inject ActivityService activityService;
+@inject IJSRuntime JS;
 @rendermode InteractiveServer
 
-<OpenStreetMap Style="border:0px;height: 500px; width: 100%;" VisibleExtentChanged="OnExtentChanged" ZoomChanged="OnZoomChanged">
-    <Layers>
-        <Layer LayerType="LayerType.Vector"
-               SourceType="SourceType.Vector">
-            <Shapes>
-                @if (graph is not null && extent is not null)
-                {
-                    foreach (var edge in graph.Edges)
-                    {
-                        @if (extent.ContainsNode(graph.Nodes[edge.Value.StartNodeKey]) || extent.ContainsNode(graph.Nodes[edge.Value.EndNodeKey]))
-                        {
-                            <Line Coordinates="new([[graph.Nodes[edge.Value.StartNodeKey].Longitude, graph.Nodes[edge.Value.StartNodeKey].Latitude],
-                                                      [graph.Nodes[edge.Value.EndNodeKey].Longitude, graph.Nodes[edge.Value.EndNodeKey].Latitude]])"
-                                          Stroke="@($"rgba({(int)(edge.Value.AverageSpeed * 50)},{(int)(0)},{edge.Value.ActivityFileNames.Count * 50},1)")"
-                                          StrokeThickness="4" />
-                        }
-                    }
-                }
-            </Shapes>
-        </Layer>
-    </Layers>
+<OpenStreetMap ConfigureJsMethod="myMapConfig" Style="border:0px;height: 500px; width: 100%;" ZoomChanged="OnZoomChanged">
 </OpenStreetMap>
-<button @onclick="@(() => SetGraph(graphFullRes))">Full Res</button>
-<button @onclick="@(() => SetGraph(graph20mRes))">20 m</button>
-<button @onclick="@(() => SetGraph(graph40mRes))">40 m</button>
-<button @onclick="@(() => SetGraph(graph80mRes))">80 m</button>
-<button @onclick="@(() => SetGraph(graph160mRes))">160 m</button>
-
 @code {
-    Graph graph;
-    Graph graphFullRes;
-    Graph graph20mRes;
-    Graph graph40mRes;
-    Graph graph80mRes;
-    Graph graph160mRes;
+    Graph displayedGraph;
+    Graph graphFull;
+    Graph graph2;
+    Graph graph3;
+    OpenStreetMap _map;
 
-    private int stringToByteHash(string str)
+    private async void OnZoomChanged(double zoomLevel)
     {
-        int hash = 5381; // A magic prime number to start with
-
-        for (int i = 0; i < str.Count(); i++)
+        if (zoomLevel < 8)
         {
-            // hash * 33 + string character code
-            hash = (hash * 33) + str[i];
+            await SetGraph(graph3);
         }
+        else if (zoomLevel < 12)
+        {
+            await SetGraph(graph2);
+        }
+        else
+        {
+            await SetGraph(graphFull);
+        }
+    }
 
-        // Force it into a single unsigned 8-bit byte (0-255)
-        return (int)(hash & 0xFF);
+    private async Task SetGraph(Graph graph)
+    {
+        if (displayedGraph == graph)
+            return;
+
+        displayedGraph = graph;
+        await RenderEdgesViaJS(displayedGraph);
     }
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+
         var activities = await activityService.GetActivities();
-        graphFullRes = new(activities);
-        graph20mRes = new(graphFullRes, 20);
-        graph40mRes = new(graphFullRes, 40);
-        graph80mRes = new(graphFullRes, 80);
-        graph160mRes = new(graphFullRes, 160);
-        graph = graphFullRes;
+        graphFull = new(activities);
+        graph2 = new(graphFull, 40);
+        graph3 = new(graphFull, 80);
     }
 
-    private Extent extent;
-    public async void OnExtentChanged(Extent extent)
+    protected override async void OnAfterRender(bool firstRender)
     {
-        this.extent = extent;
-    }
-
-    private CancellationTokenSource _zoomCts = new();
-
-    public async void OnZoomChanged(double zoomLevel)
-    {
-        // Cancel any pending zoom update
-        await _zoomCts.CancelAsync();
-        _zoomCts = new CancellationTokenSource();
-        var token = _zoomCts.Token;
-
-        try
+        base.OnAfterRender(firstRender);
+        if (firstRender)
         {
-            // Small delay to let rapid zoom events settle
-            await Task.Delay(150, token);
-
-            var targetGraph = zoomLevel < 8 ? graph160mRes
-                            : zoomLevel < 10 ? graph80mRes
-                            : zoomLevel < 12 ? graph40mRes
-                            : zoomLevel < 14 ? graph20mRes
-                            : graphFullRes;
-
-            SetGraph(targetGraph);
-        }
-        catch (TaskCanceledException)
-        {
-            // A newer zoom event arrived — discard this one
+            //await RenderEdgesViaJS(graph);
         }
     }
 
-    private void SetGraph(Graph newGraph)
+    // In @code
+    private async Task RenderEdgesViaJS(Graph targetGraph)
     {
-        if (graph == newGraph)
-            return;
+        var edges = targetGraph.Edges.Values
+            .Select(e => new
+            {
+                start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
+                end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
+                color = $"rgba({(int)(e.AverageSpeed * 50)},0,{e.ActivityFileNames.Count * 50},1)"
+            });
 
-        graph = newGraph;
-        StateHasChanged();
+        await JS.InvokeVoidAsync("setEdges", edges, "map_2");
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.JSInterop;
 using StravaStats.Components;
 using StravaStats.Services;
 
