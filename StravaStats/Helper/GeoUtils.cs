@@ -55,11 +55,7 @@ public class GeoUtils
         if (lon > 180) lon -= 360;
         if (lon < -180) lon += 360;
 
-        return new Node
-        {
-            Latitude = lat,
-            Longitude = lon
-        };
+        return new Node(lat, lon);
     }
 
     private static double ToRadians(double angle)

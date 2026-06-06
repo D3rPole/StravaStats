@@ -2,28 +2,37 @@
 @using OpenLayers.Blazor
 @using Services
 @using BusinessObjects
-@using System.Globalization
+@using Helper
 @inject ActivityService activityService;
 @rendermode InteractiveServer
 
-<OpenStreetMap Style="border:0px;height: 500px; width: 100%;" ZoomChanged="OnZoomChanged">
+<OpenStreetMap Style="border:0px;height: 500px; width: 100%;" VisibleExtentChanged="OnExtentChanged" ZoomChanged="OnZoomChanged">
     <Layers>
         <Layer LayerType="LayerType.Vector"
                SourceType="SourceType.Vector">
             <Shapes>
-                @if (graph is not null)
+                @if (graph is not null && extent is not null)
                 {
                     foreach (var edge in graph.Edges)
                     {
-                        <Line Coordinates="new([[graph.Nodes[edge.Value.StartNodeKey].Longitude, graph.Nodes[edge.Value.StartNodeKey].Latitude],                                                                                                                                                        [graph.Nodes[edge.Value.EndNodeKey].Longitude, graph.Nodes[edge.Value.EndNodeKey].Latitude]])"
-                          Stroke="@($"rgba(1,0,0,1)")"
-                          StrokeThickness="4" />
+                        @if (extent.ContainsNode(graph.Nodes[edge.Value.StartNodeKey]) || extent.ContainsNode(graph.Nodes[edge.Value.EndNodeKey]))
+                        {
+                            <Line Coordinates="new([[graph.Nodes[edge.Value.StartNodeKey].Longitude, graph.Nodes[edge.Value.StartNodeKey].Latitude],
+                                                      [graph.Nodes[edge.Value.EndNodeKey].Longitude, graph.Nodes[edge.Value.EndNodeKey].Latitude]])"
+                                          Stroke="@($"rgba({(int)(edge.Value.AverageSpeed * 50)},{(int)(0)},{edge.Value.ActivityFileNames.Count * 50},1)")"
+                                          StrokeThickness="4" />
+                        }
                     }
                 }
             </Shapes>
         </Layer>
     </Layers>
 </OpenStreetMap>
+<button @onclick="@(() => SetGraph(graphFullRes))">Full Res</button>
+<button @onclick="@(() => SetGraph(graph20mRes))">20 m</button>
+<button @onclick="@(() => SetGraph(graph40mRes))">40 m</button>
+<button @onclick="@(() => SetGraph(graph80mRes))">80 m</button>
+<button @onclick="@(() => SetGraph(graph160mRes))">160 m</button>
 
 @code {
     Graph graph;
@@ -56,7 +65,13 @@
         graph40mRes = new(graphFullRes, 40);
         graph80mRes = new(graphFullRes, 80);
         graph160mRes = new(graphFullRes, 160);
-        graph = graph160mRes;
+        graph = graphFullRes;
+    }
+
+    private Extent extent;
+    public async void OnExtentChanged(Extent extent)
+    {
+        this.extent = extent;
     }
 
     private CancellationTokenSource _zoomCts = new();
