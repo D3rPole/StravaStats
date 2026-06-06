@@ -7,14 +7,96 @@
 @inject IJSRuntime JS;
 @rendermode InteractiveServer
 
-<OpenStreetMap ConfigureJsMethod="myMapConfig" Style="border:0px;height: 500px; width: 100%;" ZoomChanged="OnZoomChanged">
+<OpenStreetMap ConfigureJsMethod="myMapConfig"
+               Style="border:0px;height: 500px; width: 100%;"
+               ZoomChanged="OnZoomChanged"
+               OnClick="OnClick"
+               @ref="map">
+    <Popup>
+        <div class="custom-map-popup">
+            @if (context is Marker marker && !string.IsNullOrWhiteSpace(marker.Text))
+            {
+                @foreach (var line in marker.Text.Split('\n'))
+                {
+                    <div class="popup-line">@line</div>
+                }
+            }
+        </div>
+    </Popup>
+    <Features>
+        @if (popupCoordinate != null && !string.IsNullOrWhiteSpace(popupContent))
+        {
+            <Marker Type="MarkerType.MarkerFlag"
+                    Coordinate="popupCoordinate.Value"
+                    Text="@popupContent"
+                    Popup 
+                    @key="markerKey" />
+        }
+    </Features>
+    <Layers>
+        @if(graphFull is not null)
+        {
+            List<QuadTree> quadTrees = graphFull.QuadTree.GetAllLeaves();
+
+            <Layer LayerType="LayerType.Vector" SourceType="SourceType.Vector">
+                <Shapes>
+                    @foreach(var quadTree in quadTrees)
+                    {
+                        <Polygon Points="@([
+                                new Coordinate(quadTree.Extent.X1 , quadTree.Extent.Y1),
+                                 new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
+                                 new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
+                                 new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
+                                 new Coordinate(quadTree.Extent.X1 , quadTree.Extent.Y1)
+                                ])" 
+                        Fill="#0000" 
+                        Stroke="#0004"
+                        StrokeThickness="2" />
+                    }
+                </Shapes>
+            </Layer>
+        }
+    </Layers>
 </OpenStreetMap>
 @code {
     Graph displayedGraph;
     Graph graphFull;
     Graph graph2;
     Graph graph3;
-    OpenStreetMap _map;
+    OpenStreetMap map;
+    private Guid markerKey = Guid.NewGuid();
+
+    public string popupContent;
+    public Coordinate? popupCoordinate;
+
+    private void OnClick(Coordinate coordinate)
+    {
+        var edge = graphFull.FindEdge(coordinate.Latitude, coordinate.Longitude);
+
+        // Instead of map.MarkersList.Clear(), resetting state tells Blazor to remove it
+        if (edge is null)
+        {
+            popupContent = null;
+            popupCoordinate = null;
+            return;
+        }
+
+        var center = edge.GetCenter(graphFull);
+        if (center.DistanceTo(coordinate) > 100)
+        {
+            popupContent = null;
+            popupCoordinate = null;
+            return;
+        }
+
+        markerKey = Guid.NewGuid();
+        popupCoordinate = center;
+        popupContent = $"Average Speed: {edge.AverageSpeed:F2}\n" +
+                       $"Average Heartrate: {edge.AverageHeartRate:F2} BPM\n" +
+                       $"Total Activities: {edge.ActivityFileNames.Count}\n";
+
+        StateHasChanged();
+    }
 
     private async void OnZoomChanged(double zoomLevel)
     {
@@ -51,16 +133,6 @@
         graph3 = new(graphFull, 80);
     }
 
-    protected override async void OnAfterRender(bool firstRender)
-    {
-        base.OnAfterRender(firstRender);
-        if (firstRender)
-        {
-            //await RenderEdgesViaJS(graph);
-        }
-    }
-
-    // In @code
     private async Task RenderEdgesViaJS(Graph targetGraph)
     {
         var edges = targetGraph.Edges.Values

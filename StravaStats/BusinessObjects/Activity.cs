@@ -28,6 +28,7 @@ namespace StravaStats.BusinessObjects
             {
                 string cachedContent = await File.ReadAllTextAsync(cacheFilePath);
                 ValhallaResponse = JsonSerializer.Deserialize<ValhallaResponse>(cachedContent);
+                MatchTrackingPointsToValhallaResponse();
                 return;
             }
 
@@ -66,6 +67,7 @@ namespace StravaStats.BusinessObjects
                 return;
             }
             ValhallaResponse = await response.Content.ReadFromJsonAsync<ValhallaResponse>();
+            MatchTrackingPointsToValhallaResponse();
 
             if (!Directory.Exists(cacheDir))
             {
@@ -74,7 +76,15 @@ namespace StravaStats.BusinessObjects
 
             string json = JsonSerializer.Serialize(ValhallaResponse);
             File.WriteAllText(cacheFilePath, json);
+        }
 
+        private void MatchTrackingPointsToValhallaResponse()
+        {
+            for (int i = 0; i < TrackingPoints.Count; i++)
+            {
+                TrackingPoints[i].Latitude = ValhallaResponse.MatchedPoints[i].Lat;
+                TrackingPoints[i].Longitude = ValhallaResponse.MatchedPoints[i].Lon;
+            }
         }
 
 

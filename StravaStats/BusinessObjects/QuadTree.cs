@@ -7,7 +7,7 @@ namespace StravaStats.BusinessObjects
     {
         const int maxEdges = 200;
         const int maxDepth = 20;
-        Extent Extent;
+        public Extent Extent;
 
         int currentDepth = 0;
         public QuadTree? UpperLeft;
@@ -29,8 +29,6 @@ namespace StravaStats.BusinessObjects
             if (!Extent.ContainsNode(nodes[edge.StartNodeKey]) &&
                 !Extent.ContainsNode(nodes[edge.EndNodeKey]))
                 return;
-
-
 
             if (isSplit)
             {
@@ -113,6 +111,23 @@ namespace StravaStats.BusinessObjects
             else
             {
                 return Edges;
+            }
+        }
+
+        public List<QuadTree> GetAllLeaves()
+        {
+            if (isSplit)
+            {
+                var result = new List<QuadTree>();
+                result.AddRange(UpperLeft.GetAllLeaves());
+                result.AddRange(UpperRight.GetAllLeaves());
+                result.AddRange(DownLeft.GetAllLeaves());
+                result.AddRange(DownRight.GetAllLeaves());
+                return result;
+            }
+            else
+            {
+                return [this];
             }
         }
     }

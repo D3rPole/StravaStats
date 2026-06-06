@@ -54,11 +54,19 @@ namespace StravaStats.Services
                     if (lat is null || lon is null)
                         return;
 
+                    object hrValue = record.GetFieldValue(3);
+                    byte heartRate = 0;
+
+                    if (hrValue != null)
+                    {
+                        heartRate = Convert.ToByte(hrValue);
+                    }
+
                     TrackingPoint trackingPoint = new()
                     {
                         TimeStamp = record.GetTimestamp()?.GetDateTime(),
-                        HeartRate = record.GetHeartRate(),
-                        Speed = record.GetSpeed(),
+                        HeartRate = heartRate == 0 ? null : (float)heartRate,
+                        Speed = record.GetSpeed() is null ? 0 : record.GetSpeed() * 3.6,
                         Latitude = lat.Value / 11930465.0,
                         Longitude = lon.Value / 11930465.0,
                         Distance = record.GetDistance() ?? 0

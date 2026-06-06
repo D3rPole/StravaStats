@@ -195,7 +195,6 @@ namespace StravaStats.BusinessObjects
             return ways;
         }
 
-
         public void AddNode(double lat, double lon)
         {
             AddNode(new Node(lat, lon));
@@ -254,6 +253,11 @@ namespace StravaStats.BusinessObjects
                 return Edges[(nodeBKey, nodeAKey)];
             else
                 return null;
+        }
+
+        public Edge? FindEdge(double lat, double lon)
+        {
+            return QuadTree.GetClosestEdge(lat, lon, Nodes);
         }
 
         public List<Edge> GetEdgesForNode(string nodeKey)
