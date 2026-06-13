@@ -1,15 +1,14 @@
-using Microsoft.JSInterop;
 using StravaStats.Components;
 using StravaStats.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<ActivityService>();
+builder.Services.AddHostedService<StravaService>();
 
 var app = builder.Build();
 
@@ -29,12 +28,13 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-AppServices.Init(app.Services);
+AppData.Init(app.Services);
 
 app.Run();
 
-public static class AppServices
+public static class AppData
 {
+    public static string DataDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "StravaStats");
     private static IServiceProvider _provider;
 
     public static void Init(IServiceProvider provider) => _provider = provider;

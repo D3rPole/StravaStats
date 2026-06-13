@@ -24,9 +24,9 @@ namespace StravaStats.BusinessObjects
                 TotalHeartRate += trackingPoint.HeartRate ?? 0;
                 TotalHeartRateDataPoints++;
             }
-            if (trackingPoint.Speed.HasValue)
+            if (trackingPoint.Velocity.HasValue)
             {
-                TotalSpeed += trackingPoint.Speed ?? 0;
+                TotalSpeed += trackingPoint.Velocity ?? 0;
                 TotalSpeedDataPoints++;
             }
         }

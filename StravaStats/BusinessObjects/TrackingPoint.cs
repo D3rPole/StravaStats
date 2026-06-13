@@ -2,9 +2,13 @@
 {
     public class TrackingPoint
     {
-        public DateTime? TimeStamp { get; set; }
+        public int Time { get; set; }
         public double? HeartRate { get; set; }
-        public double? Speed { get; set; }
+        public double? Velocity { get; set; }
+        public double? Grade { get; set; }
+        public double? Watt { get; set; }
+        public bool? Moving { get; set; }
+        public double? Altitude { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public double Distance { get; set; }

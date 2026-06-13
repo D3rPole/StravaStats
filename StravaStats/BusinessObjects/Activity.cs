@@ -9,29 +9,59 @@ namespace StravaStats.BusinessObjects
     {
         public string FileName { get; set; }
         public List<TrackingPoint> TrackingPoints { get; set; } = [];
-        public List<TrackingPoint> SimplifiedTrackingPoint { get; set; } = [];
         public ValhallaResponse ValhallaResponse { get; set; }
 
-        public void Simplify()
+        public Activity() { }
+        public Activity(RawActivity rawActivity)
         {
-            SimplifiedTrackingPoint = DouglasPeucker(TrackingPoints, 0.00001);
+            for(int i = 0; i < rawActivity.Distance.Size; i++)
+            {
+                TrackingPoint trackingPoint = new TrackingPoint();
+                if(rawActivity.Time is not null)
+                    trackingPoint.Time = ((JsonElement)rawActivity.Time.Data[i]).GetInt32();
+                if(rawActivity.HeartRate is not null)
+                    trackingPoint.HeartRate = ((JsonElement)rawActivity.HeartRate.Data[i]).GetDouble();
+                if(rawActivity.Velocity is not null)
+                    trackingPoint.Velocity = ((JsonElement)rawActivity.Velocity.Data[i]).GetDouble();
+                if(rawActivity.Grade is not null)
+                    trackingPoint.Grade = ((JsonElement)rawActivity.Grade.Data[i]).GetDouble();
+                if(rawActivity.Moving is not null)
+                    trackingPoint.Moving = ((JsonElement)rawActivity.Moving.Data[i]).GetBoolean();
+                if(rawActivity.Altitude is not null)
+                    trackingPoint.Altitude = ((JsonElement)rawActivity.Altitude.Data[i]).GetDouble();
+                if(rawActivity.Time is not null)
+                    trackingPoint.Time = ((JsonElement)rawActivity.Time.Data[i]).GetInt32();
+                if(rawActivity.LatLng is not null)
+                {
+                    var obj = (JsonElement)rawActivity.LatLng.Data[i];
+
+                    if (obj[0] is JsonElement lat)
+                        trackingPoint.Latitude = lat.GetDouble();
+                    if (obj[1] is JsonElement lon)
+                        trackingPoint.Longitude = lon.GetDouble();
+                }
+
+                trackingPoint.Distance = ((JsonElement)rawActivity.Distance.Data[i]).GetDouble();
+
+                
+                TrackingPoints.Add(trackingPoint);
+            }
         }
 
         public async Task MatchRoads()
         {
-            var configuration = AppServices.GetService<IConfiguration>();
-            string? activitiesPath = configuration["ActivitiesPath"];
-            string cacheDir = Path.Combine(activitiesPath, "cache");
+            var configuration = AppData.GetService<IConfiguration>();
+            string activitiesPath = Path.Combine(AppData.DataDirectory, "Activities");
+            string cacheDir = Path.Combine(activitiesPath, "Cache");
             string cacheFilePath = Path.Combine(cacheDir, $"{FileName}.json");
 
-            if(File.Exists(cacheFilePath))
+            if (File.Exists(cacheFilePath))
             {
                 string cachedContent = await File.ReadAllTextAsync(cacheFilePath);
                 ValhallaResponse = JsonSerializer.Deserialize<ValhallaResponse>(cachedContent);
                 MatchTrackingPointsToValhallaResponse();
                 return;
             }
-
 
             HttpClient client = new();
             var response = await client.PostAsJsonAsync($"{configuration["ValhallaServer"]}/trace_attributes", new
@@ -85,8 +115,8 @@ namespace StravaStats.BusinessObjects
                 TrackingPoints[i].Latitude = ValhallaResponse.MatchedPoints[i].Lat;
                 TrackingPoints[i].Longitude = ValhallaResponse.MatchedPoints[i].Lon;
             }
+            int a = 0;
         }
-
 
         private List<TrackingPoint> DouglasPeucker(List<TrackingPoint> points, double tolerance)
         {
@@ -143,13 +173,6 @@ namespace StravaStats.BusinessObjects
                 double projY = lineStart.Latitude + t * dy;
                 return Math.Sqrt(Math.Pow(point.Longitude - projX, 2) + Math.Pow(point.Latitude - projY, 2));
             }
-        }
-
-        private double Distance(TrackingPoint p1, TrackingPoint p2)
-        {
-            double dx = p1.Longitude - p2.Longitude;
-            double dy = p1.Latitude - p2.Latitude;
-            return Math.Sqrt(dx * dx + dy * dy);
         }
     }
 }

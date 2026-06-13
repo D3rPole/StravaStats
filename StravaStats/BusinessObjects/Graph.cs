@@ -14,7 +14,7 @@ namespace StravaStats.BusinessObjects
 
         public Graph(List<Activity> activities)
         {
-            var configiration = AppServices.GetService<IConfiguration>();
+            var configiration = AppData.GetService<IConfiguration>();
             double maxNodeDistance = double.Parse(configiration["MaxNodeDistance"]);
             int e = 0;
             foreach (var activity in activities)
