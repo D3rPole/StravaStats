@@ -50,7 +50,7 @@
                                  new Coordinate(quadTree.Extent.X1 , quadTree.Extent.Y1)
                                 ])" 
                         Fill="#0000" 
-                        Stroke="#0004"
+                        Stroke="#0001"
                         StrokeThickness="2" />
                     }
                 </Shapes>
@@ -140,9 +140,9 @@
             {
                 start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
                 end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
-                color = $"rgba({(int)(e.AverageSpeed * 50)},0,{e.ActivityFileNames.Count * 50},1)"
+                color = $"rgba({(int)(e.AverageSpeed * 7)},0,{e.ActivityFileNames.Count * 50},1)"
             });
 
-        await JS.InvokeVoidAsync("setEdges", edges, "map_2");
+        await JS.InvokeVoidAsync("setEdges", edges);
     }
 }
