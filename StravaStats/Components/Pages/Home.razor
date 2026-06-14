@@ -3,71 +3,101 @@
 @using Services
 @using BusinessObjects
 @using Helper
+@using Enums;
 @inject ActivityService activityService;
 @inject IJSRuntime JS;
-@rendermode InteractiveServer
+@inject IConfiguration configuration;
 
-<OpenStreetMap ConfigureJsMethod="myMapConfig"
-               Style="border:0px;height: 500px; width: 100%;"
-               ZoomChanged="OnZoomChanged"
-               OnClick="OnClick"
-               @ref="map">
-    <Popup>
-        <div class="custom-map-popup">
-            @if (context is Marker marker && !string.IsNullOrWhiteSpace(marker.Text))
-            {
-                @foreach (var line in marker.Text.Split('\n'))
+<div>
+    <Map ConfigureJsMethod="myMapConfig"
+                   Style="border:0px;height: 500px; width: 100%;"
+                   ZoomChanged="OnZoomChanged"
+                   OnClick="OnClick"
+                   InitialZoom = "8"
+                   InitialCenter="new Coordinate(7.71667, 52.28333)"
+                   Class="dark-mode"
+                   @ref="map">
+               
+        <Popup>
+            <div class="custom-map-popup">
+                @if (context is Marker marker && !string.IsNullOrWhiteSpace(marker.Text))
                 {
-                    <div class="popup-line">@line</div>
+                    @foreach (var line in marker.Text.Split('\n'))
+                    {
+                        <div class="popup-line">@line</div>
+                    }
+                }
+            </div>
+        </Popup>
+        <Features>
+            @if (popupCoordinate != null && !string.IsNullOrWhiteSpace(popupContent))
+            {
+                <Marker Type="MarkerType.MarkerFlag"
+                        Coordinate="popupCoordinate.Value"
+                        Text="@popupContent"
+                        Popup
+                        @key="markerKey" />
+            }
+        </Features>
+        <Layers>
+            <Layer LayerType="LayerType.Tile"
+                   SourceType="SourceType.XYZ"
+                       Url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png" />
+            @if (graphFull is not null)
+            {
+                List<QuadTree> quadTrees = graphFull.QuadTree.GetAllLeaves();
+
+                @if (configuration.GetValue<bool>("ShowQuadTree"))
+                {
+                    <Layer LayerType="LayerType.Vector" SourceType="SourceType.Vector">
+                        <Shapes>
+                            @foreach (var quadTree in quadTrees)
+                            {
+                                <Polygon Points="@([
+                                                new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1),
+                                                new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
+                                                new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
+                                                new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
+                                                new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
+                                            ])"
+                                Fill="#0000"
+                                Stroke="#0001"
+                                StrokeThickness="2" />
+                            }
+                        </Shapes>
+                    </Layer>
                 }
             }
-        </div>
-    </Popup>
-    <Features>
-        @if (popupCoordinate != null && !string.IsNullOrWhiteSpace(popupContent))
-        {
-            <Marker Type="MarkerType.MarkerFlag"
-                    Coordinate="popupCoordinate.Value"
-                    Text="@popupContent"
-                    Popup 
-                    @key="markerKey" />
-        }
-    </Features>
-    <Layers>
-        @if(graphFull is not null)
-        {
-            List<QuadTree> quadTrees = graphFull.QuadTree.GetAllLeaves();
+        </Layers>
+    </Map>
 
-            <Layer LayerType="LayerType.Vector" SourceType="SourceType.Vector">
-                <Shapes>
-                    @foreach(var quadTree in quadTrees)
-                    {
-                        <Polygon Points="@([
-                                new Coordinate(quadTree.Extent.X1 , quadTree.Extent.Y1),
-                                 new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
-                                 new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
-                                 new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
-                                 new Coordinate(quadTree.Extent.X1 , quadTree.Extent.Y1)
-                                ])" 
-                        Fill="#0000" 
-                        Stroke="#0001"
-                        StrokeThickness="2" />
-                    }
-                </Shapes>
-            </Layer>
-        }
-    </Layers>
-</OpenStreetMap>
+    <MudSelect T="Metric" ValueChanged="SelectedMetricChanged">
+        <MudSelectItem Value="Metric.Count"/>
+        <MudSelectItem Value="Metric.HeartRate"/>
+        <MudSelectItem Value="Metric.Velocity"/>
+        <MudSelectItem Value="Metric.Acceleration"/>
+        <MudSelectItem Value="Metric.Wattage"/>
+        <MudSelectItem Value="Metric.Grade"/>
+    </MudSelect>
+</div>
+
 @code {
     Graph displayedGraph;
     Graph graphFull;
     Graph graph2;
     Graph graph3;
-    OpenStreetMap map;
+    Map map;
+    private Metric displayedMetric;
     private Guid markerKey = Guid.NewGuid();
 
     public string popupContent;
     public Coordinate? popupCoordinate;
+
+    private void SelectedMetricChanged(Metric metric)
+    {
+        displayedMetric = metric;
+        RenderEdgesViaJS(displayedGraph);
+    }
 
     private void OnClick(Coordinate coordinate)
     {
@@ -91,20 +121,24 @@
 
         markerKey = Guid.NewGuid();
         popupCoordinate = center;
-        popupContent = $"Average Speed: {edge.AverageSpeed:F2}\n" +
-                       $"Average Heartrate: {edge.AverageHeartRate:F2} BPM\n" +
-                       $"Total Activities: {edge.ActivityFileNames.Count}\n";
+        popupContent = $"Total Activities: {edge.ActivityFileNames.Count}\n" +
+                        $"Average Heartrate: {edge.HeartRate.Average:F2} BPM\n" +
+                        $"Grade: {edge.Grade.Average:F2} %\n" +
+                        $"Average Speed: {edge.Velocity.Average:F2} Km/h\n" +
+                        $"Average Acceleration: {edge.Acceleration.Average:F2} m/s²\n" +
+                        $"Average Wattage: {edge.Wattage.Average:F2} W\n";
 
         StateHasChanged();
     }
 
     private async void OnZoomChanged(double zoomLevel)
     {
-        if (zoomLevel < 8)
+        Console.WriteLine(zoomLevel);
+        if (zoomLevel < 10)
         {
             await SetGraph(graph3);
         }
-        else if (zoomLevel < 12)
+        else if (zoomLevel < 13)
         {
             await SetGraph(graph2);
         }
@@ -130,17 +164,56 @@
         var activities = await activityService.GetActivities();
         graphFull = new(activities);
         graph2 = new(graphFull, 40);
-        graph3 = new(graphFull, 80);
+        graph3 = new(graphFull, 160);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(250);
+
+            if (map != null)
+            {
+                await SetGraph(graph3);
+            }
+        }
     }
 
     private async Task RenderEdgesViaJS(Graph targetGraph)
     {
+        
+
         var edges = targetGraph.Edges.Values
-            .Select(e => new
-            {
-                start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
-                end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
-                color = $"rgba({(int)(e.AverageSpeed * 7)},0,{e.ActivityFileNames.Count * 50},1)"
+            .Select(e => {
+                string color = string.Empty;
+                switch (displayedMetric)
+                {
+                    case Metric.Count:
+                        color = $"rgba(200,{200 - (int)(e.ActivityFileNames.Count * 15)},{200 - (int)(e.ActivityFileNames.Count * 10)},1)";
+                        break;
+                    case Metric.Velocity:
+                        color = $"rgba(200,{200 - (int)(e.Velocity.Average * 8)},{200 - (int)(e.Velocity.Average * 5)},1)";
+                        break;
+                    case Metric.HeartRate:
+                        color = $"rgba(200,{200 - (int)(e.HeartRate.Average * 1.5)},{200 - (int)(e.HeartRate.Average)},1)";
+                        break;
+                    case Metric.Wattage:
+                        color = $"rgba(200,{200 - (int)(e.Wattage.Average * 1.5)},{200 - (int)(e.Wattage.Average)},1)";
+                        break;
+                    case Metric.Acceleration:
+                        color = $"rgba(200,{200 - (int)(e.Acceleration.Average * 15)},{200 - (int)(e.Acceleration.Average * 10)},1)";
+                        break;
+                    case Metric.Grade:
+                        color = $"rgba(200,{200 - (int)(e.Grade.Average * 15)},{200 - (int)(e.Grade.Average * 10)},1)";
+                        break;
+                }
+                return new
+                {
+                    start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
+                    end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
+                    color = color
+                };
             });
 
         await JS.InvokeVoidAsync("setEdges", edges);

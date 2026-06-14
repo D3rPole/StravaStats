@@ -5,7 +5,7 @@ namespace StravaStats.BusinessObjects
 {
     public class QuadTree
     {
-        const int maxEdges = 200;
+        const int maxEdges = 20;
         const int maxDepth = 20;
         public Extent Extent;
 

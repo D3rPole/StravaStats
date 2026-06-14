@@ -1,3 +1,4 @@
+using MudBlazor.Services;
 using StravaStats.Components;
 using StravaStats.Services;
 
@@ -9,6 +10,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddSingleton<ActivityService>();
 builder.Services.AddHostedService<StravaService>();
+builder.Services.AddMudServices();
 
 var app = builder.Build();
 

@@ -3,6 +3,25 @@ using StravaStats.Helper;
 
 namespace StravaStats.BusinessObjects
 {
+    public class MetricSummary
+    {
+        public double Average => count == 0 ? 0 : totalValue / count;
+        private double totalValue { get; set; }
+        private int count { get; set; }
+        public void AddMetric(double? value)
+        {
+            if (value is null) return;
+            count++;
+            totalValue += value.Value;
+        }
+
+        public void AddMetric(MetricSummary metric)
+        {
+            if (metric is null) return;
+            count += metric.count;
+            totalValue += metric.totalValue;
+        }
+    }
     public class Edge
     {
         public string StartNodeKey { get; set; }
@@ -10,33 +29,30 @@ namespace StravaStats.BusinessObjects
         public long WayId { get; set; }
         public double Length { get; set; }
         public HashSet<string> ActivityFileNames { get; set; } = new();
-        public int TotalSpeedDataPoints { get; set; }
-        public int TotalHeartRateDataPoints { get; set; }
-        public double TotalHeartRate { get; set; }
-        public double TotalSpeed { get; set; }
-        public double AverageHeartRate => TotalHeartRateDataPoints > 0 ? TotalHeartRate / TotalHeartRateDataPoints : 0;
-        public double AverageSpeed => TotalSpeedDataPoints > 0 ? TotalSpeed / TotalSpeedDataPoints : 0;
+
+        public MetricSummary HeartRate { get; set; } = new();
+        public MetricSummary Velocity { get; set; } = new();
+        public MetricSummary Grade { get; set; } = new();
+        public MetricSummary Wattage { get; set; } = new();
+        public MetricSummary Acceleration { get; set; } = new();
 
         public void AddDataPoint(TrackingPoint trackingPoint)
         {
-            if (trackingPoint.HeartRate.HasValue)
-            {
-                TotalHeartRate += trackingPoint.HeartRate ?? 0;
-                TotalHeartRateDataPoints++;
-            }
-            if (trackingPoint.Velocity.HasValue)
-            {
-                TotalSpeed += trackingPoint.Velocity ?? 0;
-                TotalSpeedDataPoints++;
-            }
+            HeartRate.AddMetric(trackingPoint.HeartRate);
+            Velocity.AddMetric(trackingPoint.Velocity);
+            Grade.AddMetric(trackingPoint.Grade);
+            Wattage.AddMetric(trackingPoint.Watt);
+            Acceleration.AddMetric(trackingPoint.Acceleration);
         }
 
         public void AddEdge(Edge edge)
         {
             ActivityFileNames.UnionWith(edge.ActivityFileNames);
-            TotalHeartRate += edge.TotalHeartRate;
-            TotalSpeed += edge.TotalSpeed;
-            TotalSpeedDataPoints += edge.TotalSpeedDataPoints;
+            HeartRate.AddMetric(edge.HeartRate);
+            Velocity.AddMetric(edge.Velocity);
+            Grade.AddMetric(edge.Grade);
+            Wattage.AddMetric(edge.Wattage);
+            Acceleration.AddMetric(edge.Acceleration);
         }
 
         public double DistanceToPoint(Node node, Dictionary<string, Node> nodes)

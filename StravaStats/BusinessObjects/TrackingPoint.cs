@@ -7,6 +7,7 @@
         public double? Velocity { get; set; }
         public double? Grade { get; set; }
         public double? Watt { get; set; }
+        public double? Acceleration { get; set; }
         public bool? Moving { get; set; }
         public double? Altitude { get; set; }
         public double Latitude { get; set; }

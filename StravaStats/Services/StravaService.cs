@@ -87,7 +87,7 @@ namespace StravaStats.Services
             var response = await httpClient.PostAsync("oauth/token", content);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogError(response.ReasonPhrase);
+                logger.LogError("Token refresh error: " + response.ReasonPhrase);
                 return false;
             }
 
@@ -97,6 +97,7 @@ namespace StravaStats.Services
             {
                 string tokenFilePath = Path.Combine(AppData.DataDirectory, "Tokens.json");
                 File.WriteAllText(tokenFilePath, responseString);
+                logger.LogInformation("Token refreshed.");
                 return true;
             }
 

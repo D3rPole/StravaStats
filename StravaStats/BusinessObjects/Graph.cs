@@ -20,6 +20,8 @@ namespace StravaStats.BusinessObjects
             foreach (var activity in activities)
             {
                 var valhallaResponse = activity.ValhallaResponse;
+                if (valhallaResponse is null)
+                    continue;
                 foreach (var node in valhallaResponse.NodeCoords)
                 {
                     AddNode(new Node(node.Latitude, node.Longitude));
@@ -77,7 +79,6 @@ namespace StravaStats.BusinessObjects
                     closestEdge.ActivityFileNames.Add(activity.FileName);
                 }
             }
-            Console.WriteLine(e);
         }
 
         public Graph(Graph other, double nodeDistance)

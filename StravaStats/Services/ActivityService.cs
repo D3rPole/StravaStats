@@ -29,6 +29,8 @@ namespace StravaStats.Services
                     logger.LogError($"Couldn't load Activity: {file}");
                     continue;
                 }
+                if (rawActivity.Distance is null)
+                    continue;
                 var activity = new Activity(rawActivity);
                 activity.FileName = Path.GetFileName(file);
                 await activity.MatchRoads();

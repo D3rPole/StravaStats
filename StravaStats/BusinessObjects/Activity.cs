@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Globalization;
-using PolylinerNet;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace StravaStats.BusinessObjects
 {
@@ -11,7 +8,8 @@ namespace StravaStats.BusinessObjects
         public List<TrackingPoint> TrackingPoints { get; set; } = [];
         public ValhallaResponse ValhallaResponse { get; set; }
 
-        public Activity() { }
+        ILogger<Activity> logger = AppData.GetService<ILogger<Activity>>();
+
         public Activity(RawActivity rawActivity)
         {
             for(int i = 0; i < rawActivity.Distance.Size; i++)
@@ -22,7 +20,7 @@ namespace StravaStats.BusinessObjects
                 if(rawActivity.HeartRate is not null)
                     trackingPoint.HeartRate = ((JsonElement)rawActivity.HeartRate.Data[i]).GetDouble();
                 if(rawActivity.Velocity is not null)
-                    trackingPoint.Velocity = ((JsonElement)rawActivity.Velocity.Data[i]).GetDouble();
+                    trackingPoint.Velocity = ((JsonElement)rawActivity.Velocity.Data[i]).GetDouble() * 3.6;
                 if(rawActivity.Grade is not null)
                     trackingPoint.Grade = ((JsonElement)rawActivity.Grade.Data[i]).GetDouble();
                 if(rawActivity.Moving is not null)
@@ -59,8 +57,11 @@ namespace StravaStats.BusinessObjects
             {
                 string cachedContent = await File.ReadAllTextAsync(cacheFilePath);
                 ValhallaResponse = JsonSerializer.Deserialize<ValhallaResponse>(cachedContent);
-                MatchTrackingPointsToValhallaResponse();
-                return;
+                if(ValhallaResponse is not null)
+                {
+                    MatchTrackingPointsToValhallaResponse();
+                    return;
+                }
             }
 
             HttpClient client = new();
@@ -92,11 +93,16 @@ namespace StravaStats.BusinessObjects
 
             if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"Valhalla request failed with status code: {response.StatusCode}");
-                Console.WriteLine(await response.Content.ReadAsStringAsync());
+                logger.LogError($"Valhalla request failed with status code: {response.StatusCode}");
                 return;
             }
             ValhallaResponse = await response.Content.ReadFromJsonAsync<ValhallaResponse>();
+            if(ValhallaResponse is null)
+            {
+                logger.LogError("Couldn't parse Valhalla response");
+                return;
+            }
+            logger.LogInformation("Retrieved Valhalla response");
             MatchTrackingPointsToValhallaResponse();
 
             if (!Directory.Exists(cacheDir))
