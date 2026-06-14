@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using StravaStats.BusinessObjects;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace StravaStats.Services
@@ -11,74 +12,18 @@ namespace StravaStats.Services
         [JsonPropertyName("name")]
         public string Name { get; set; }
     }
-    public class Token
+    public class StravaService(IConfiguration configuration, ILogger<StravaService> logger)
     {
-        [JsonPropertyName("token_type")]
-        public string Type { get; set; }
-
-        [JsonPropertyName("access_token")]
-        public string AccessToken { get; set; }
-
-        [JsonPropertyName("expires_at")]
-        public int ExpiresAt { get; set; }
-
-        [JsonPropertyName("expires_in")]
-        public int ExpiresIn { get; set; }
-
-        [JsonPropertyName("refresh_token")]
-        public string RefreshToken { get; set; }
-
-        [JsonPropertyName("scope")]
-        public string Scope { get; set; }
-
-        [JsonIgnore]
-        public DateTime ExpiresAtDateTime => DateTimeOffset.FromUnixTimeSeconds(ExpiresAt).UtcDateTime;
-    }
-    public class StravaService(IConfiguration configuration, ILogger<StravaService> logger) : IHostedService
-    {
-        private Token? token;
-
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            LoadToken();
-            await DownloadActivities();
-        }
-
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-        }
-
-        private void LoadToken()
-        {
-            string tokenFilePath = Path.Combine(AppData.DataDirectory, "Tokens.json");
-            if (!File.Exists(tokenFilePath))
-            {
-                logger.LogError("Token File missing. Strava Api unavailable.");
-                return;
-            }
-
-            string jsonText = File.ReadAllText(tokenFilePath);
-
-            token = JsonSerializer.Deserialize<Token>(jsonText);
-
-            if (token is null)
-            {
-                logger.LogError("Failed to read Tokens. Strava Api unavailable.");
-                return;
-            }
-            logger.LogInformation("Token loaded");
-        }
-
-        public async Task<bool> RefreshToken()
+        public async Task<bool> RefreshToken(Account account)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri("https://www.strava.com/");
 
             var parameters = new Dictionary<string, string>
             {
-                { "client_id", configuration["StravaClientId"] ?? string.Empty },
-                { "client_secret", configuration["StravaClientSecret"] ?? string.Empty },
-                { "refresh_token", token?.RefreshToken ?? string.Empty },
+                { "client_id", account.ClientId ?? string.Empty },
+                { "client_secret", account.ClientSecret ?? string.Empty },
+                { "refresh_token", account.Token.RefreshToken ?? string.Empty },
                 { "grant_type", "refresh_token" }
             };
 
@@ -87,43 +32,44 @@ namespace StravaStats.Services
             var response = await httpClient.PostAsync("oauth/token", content);
             if (!response.IsSuccessStatusCode)
             {
+                var r = await response.Content.ReadAsStringAsync();
                 logger.LogError("Token refresh error: " + response.ReasonPhrase);
                 return false;
             }
 
             var responseString = await response.Content.ReadAsStringAsync();
-            token = JsonSerializer.Deserialize<Token>(responseString);
+            var token = JsonSerializer.Deserialize<Token>(responseString);
             if (token is not null)
             {
-                string tokenFilePath = Path.Combine(AppData.DataDirectory, "Tokens.json");
+                string tokenFilePath = Path.Combine(account.AccountDirectory, "Account.json");
                 File.WriteAllText(tokenFilePath, responseString);
+                account.Token = token;
                 logger.LogInformation("Token refreshed.");
                 return true;
             }
 
-            logger.LogError("Token turned out to be null, reloading old token. Refresh failed");
-            LoadToken(); // just reload old token, try again later
+            logger.LogError("Token turned out to be null, Refresh failed");
             return false;
         }
 
-        public async Task DownloadActivities()
+        public async Task DownloadActivities(Account account, string activitiesPath)
         {
-            if (token is null)
+            if (account.Token is null)
             {
                 logger.LogError("No Token set, skipping Activities download");
                 return;
             }
 
-            if (token.ExpiresAtDateTime < DateTime.Now)
+            if (account.Token.ExpiresAtDateTime < DateTime.Now)
             {
-                bool refreshed = await RefreshToken();
+                bool refreshed = await RefreshToken(account);
                 if (!refreshed)
                     return;
             }
 
             HttpClient httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri("https://www.strava.com/api/v3/");
-            httpClient.DefaultRequestHeaders.Authorization = new("Bearer", token.AccessToken);
+            httpClient.DefaultRequestHeaders.Authorization = new("Bearer", account.Token.AccessToken);
 
             List<ActivityResponse> activities = [];
             List<ActivityResponse>? currentRequestActivities = null;
@@ -141,17 +87,21 @@ namespace StravaStats.Services
                 activities.AddRange(currentRequestActivities ?? []);
                 page++;
             } while (currentRequestActivities is not null && currentRequestActivities.Count > 0);
-            int i = 0;
+
+            logger.LogInformation($"Found {activities.Count} Activities for {account.Name}");
+
             // Get Activity:
             // https://www.strava.com/api/v3/activities/18894098488/streams?keys=time,distance,latlng,heartrate&key_by_type=true
 
-            string activitiesDirectory = Path.Combine(AppData.DataDirectory, "Activities");
-            if (!Directory.Exists(activitiesDirectory))
-                Directory.CreateDirectory(activitiesDirectory);
+            string targetDirectory = Path.Combine(activitiesPath, AppData.ActivitiesStravaFileLocation);
 
+            if (!Directory.Exists(targetDirectory))
+                Directory.CreateDirectory(targetDirectory);
+
+            int downloaded = 0;
             foreach (ActivityResponse activity in activities)
             {
-                string activityPath = Path.Combine(activitiesDirectory, activity.Id + ".json");
+                string activityPath = Path.Combine(targetDirectory, activity.Id + ".json");
                 if (File.Exists(activityPath))
                     continue;
 
@@ -164,6 +114,8 @@ namespace StravaStats.Services
 
                 var stringResponse = await response.Content.ReadAsStringAsync();
                 File.WriteAllText(activityPath, stringResponse);
+                downloaded++;
+                logger.LogInformation($"Downloaded {downloaded} / {activities.Count} Activities for {account.Name}");
             }
         }
     }

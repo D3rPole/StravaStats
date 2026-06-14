@@ -1,35 +1,45 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
     public class Activity
     {
-        public string FileName { get; set; }
+        public string Id { get; set; }
+
         public List<TrackingPoint> TrackingPoints { get; set; } = [];
+
+        public Graph Graph { get; set; }
+
+        [JsonIgnore]
         public ValhallaResponse ValhallaResponse { get; set; }
 
+        [JsonIgnore]
         ILogger<Activity> logger = AppData.GetService<ILogger<Activity>>();
 
-        public Activity(RawActivity rawActivity)
+        public Activity() { }
+
+        public Activity(RawActivity rawActivity, string Id)
         {
-            for(int i = 0; i < rawActivity.Distance.Size; i++)
+            this.Id = Id;
+            for (int i = 0; i < rawActivity.Distance.Size; i++)
             {
                 TrackingPoint trackingPoint = new TrackingPoint();
-                if(rawActivity.Time is not null)
+                if (rawActivity.Time is not null)
                     trackingPoint.Time = ((JsonElement)rawActivity.Time.Data[i]).GetInt32();
-                if(rawActivity.HeartRate is not null)
+                if (rawActivity.HeartRate is not null)
                     trackingPoint.HeartRate = ((JsonElement)rawActivity.HeartRate.Data[i]).GetDouble();
-                if(rawActivity.Velocity is not null)
+                if (rawActivity.Velocity is not null)
                     trackingPoint.Velocity = ((JsonElement)rawActivity.Velocity.Data[i]).GetDouble() * 3.6;
-                if(rawActivity.Grade is not null)
+                if (rawActivity.Grade is not null)
                     trackingPoint.Grade = ((JsonElement)rawActivity.Grade.Data[i]).GetDouble();
-                if(rawActivity.Moving is not null)
+                if (rawActivity.Moving is not null)
                     trackingPoint.Moving = ((JsonElement)rawActivity.Moving.Data[i]).GetBoolean();
-                if(rawActivity.Altitude is not null)
+                if (rawActivity.Altitude is not null)
                     trackingPoint.Altitude = ((JsonElement)rawActivity.Altitude.Data[i]).GetDouble();
-                if(rawActivity.Time is not null)
+                if (rawActivity.Time is not null)
                     trackingPoint.Time = ((JsonElement)rawActivity.Time.Data[i]).GetInt32();
-                if(rawActivity.LatLng is not null)
+                if (rawActivity.LatLng is not null)
                 {
                     var obj = (JsonElement)rawActivity.LatLng.Data[i];
 
@@ -41,23 +51,21 @@ namespace StravaStats.BusinessObjects
 
                 trackingPoint.Distance = ((JsonElement)rawActivity.Distance.Data[i]).GetDouble();
 
-                
                 TrackingPoints.Add(trackingPoint);
             }
         }
 
-        public async Task MatchRoads()
+        public async Task MatchRoads(string activitiesPath)
         {
             var configuration = AppData.GetService<IConfiguration>();
-            string activitiesPath = Path.Combine(AppData.DataDirectory, "Activities");
-            string cacheDir = Path.Combine(activitiesPath, "Cache");
-            string cacheFilePath = Path.Combine(cacheDir, $"{FileName}.json");
+            string cacheDir = Path.Combine(activitiesPath, AppData.ActivitiesValhallaFileLocation);
+            string cacheFilePath = Path.Combine(cacheDir, $"{Id}.json");
 
             if (File.Exists(cacheFilePath))
             {
                 string cachedContent = await File.ReadAllTextAsync(cacheFilePath);
                 ValhallaResponse = JsonSerializer.Deserialize<ValhallaResponse>(cachedContent);
-                if(ValhallaResponse is not null)
+                if (ValhallaResponse is not null)
                 {
                     MatchTrackingPointsToValhallaResponse();
                     return;
@@ -97,7 +105,7 @@ namespace StravaStats.BusinessObjects
                 return;
             }
             ValhallaResponse = await response.Content.ReadFromJsonAsync<ValhallaResponse>();
-            if(ValhallaResponse is null)
+            if (ValhallaResponse is null)
             {
                 logger.LogError("Couldn't parse Valhalla response");
                 return;
@@ -109,19 +117,19 @@ namespace StravaStats.BusinessObjects
             {
                 Directory.CreateDirectory(cacheDir);
             }
-
             string json = JsonSerializer.Serialize(ValhallaResponse);
             File.WriteAllText(cacheFilePath, json);
         }
 
         private void MatchTrackingPointsToValhallaResponse()
         {
+            int a = 0;
             for (int i = 0; i < TrackingPoints.Count; i++)
             {
                 TrackingPoints[i].Latitude = ValhallaResponse.MatchedPoints[i].Lat;
                 TrackingPoints[i].Longitude = ValhallaResponse.MatchedPoints[i].Lon;
             }
-            int a = 0;
+            Graph = new Graph([this]);
         }
 
         private List<TrackingPoint> DouglasPeucker(List<TrackingPoint> points, double tolerance)

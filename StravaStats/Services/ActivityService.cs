@@ -3,39 +3,59 @@ using System.Text.Json;
 
 namespace StravaStats.Services
 {
-    public class ActivityService(
-        IConfiguration configuration,
-        ILogger<ActivityService> logger)
+    public class ActivityService(ILogger<ActivityService> logger)
     {
-        private readonly IConfiguration _configuration = configuration;
-
-        private List<BusinessObjects.Activity> activities = [];
-
-        public async Task<List<BusinessObjects.Activity>> GetActivities()
+        public async Task<List<Activity>> GetActivities(string activitiesPath)
         {
-            if (activities.Count > 0)
-                return activities;
+            string stravaActivitiesPath = Path.Combine(activitiesPath, AppData.ActivitiesStravaFileLocation);
+            string activityCache = Path.Combine(activitiesPath, AppData.ActivitiesCacheLocation);
 
-            string activitiesDirectory = Path.Combine(AppData.DataDirectory, "Activities");
-            if (!Directory.Exists(activitiesDirectory))
-                return [];
+            if (!Directory.Exists(activitiesPath))
+                Directory.CreateDirectory(activitiesPath);
 
-            foreach(string file in Directory.EnumerateFiles(activitiesDirectory))
+            if (!Directory.Exists(activityCache))
+                Directory.CreateDirectory(activityCache);
+
+            if (!Directory.Exists(stravaActivitiesPath))
+                Directory.CreateDirectory(stravaActivitiesPath);
+
+            List<Task> tasks = [];
+            List<Activity> activities = [];
+            foreach (string file in Directory.EnumerateFiles(stravaActivitiesPath))
             {
-                string jsonString = await File.ReadAllTextAsync(file);
-                var rawActivity = JsonSerializer.Deserialize<RawActivity>(jsonString);
-                if(rawActivity is null)
+                var task = Task.Run(async () =>
                 {
-                    logger.LogError($"Couldn't load Activity: {file}");
-                    continue;
-                }
-                if (rawActivity.Distance is null)
-                    continue;
-                var activity = new Activity(rawActivity);
-                activity.FileName = Path.GetFileName(file);
-                await activity.MatchRoads();
-                activities.Add(activity);
+                    string activityCachedFile = Path.Combine(activityCache, Path.GetFileNameWithoutExtension(file) + ".json");
+                    if (File.Exists(activityCachedFile))
+                    {
+                        string actJson = await File.ReadAllTextAsync(activityCachedFile);
+                        Activity? act = JsonSerializer.Deserialize<Activity>(actJson);
+
+                        if (act is not null)
+                        {
+                            activities.Add(act);
+                            return;
+                        }
+                    }
+
+                    string jsonString = await File.ReadAllTextAsync(file);
+                    var rawActivity = JsonSerializer.Deserialize<RawActivity>(jsonString);
+                    if (rawActivity is null)
+                    {
+                        logger.LogError($"Couldn't load Activity: {file}");
+                        return;
+                    }
+                    if (rawActivity.Distance is null)
+                        return;
+                    var activity = new Activity(rawActivity, Path.GetFileNameWithoutExtension(file));
+                    await activity.MatchRoads(activitiesPath);
+                    string activityJson = JsonSerializer.Serialize(activity);
+                    File.WriteAllText(activityCachedFile, activityJson);
+                    activities.Add(activity);
+                });
+                tasks.Add(task);
             }
+            Task.WaitAll(tasks);
             return activities;
         }
     }

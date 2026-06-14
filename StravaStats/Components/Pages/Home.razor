@@ -2,22 +2,37 @@
 @using OpenLayers.Blazor
 @using Services
 @using BusinessObjects
-@using Helper
-@using Enums;
-@inject ActivityService activityService;
-@inject IJSRuntime JS;
-@inject IConfiguration configuration;
+@using Enums
+@inject AccountService accountService
+@inject IConfiguration configuration
+@inject IJSRuntime JS
 
 <div>
+    <MudSelect Label="Account" T="Account" ValueChanged="SelectedAccountChanged">
+        @foreach (var account in accountService.Accounts)
+        {
+            <MudSelectItem Value="@account">@account.Name</MudSelectItem>
+        }
+    </MudSelect>
+
+    <MudSelect Label="Metric" T="Metric" ValueChanged="SelectedMetricChanged">
+        <MudSelectItem Value="Metric.Count" />
+        <MudSelectItem Value="Metric.HeartRate" />
+        <MudSelectItem Value="Metric.Velocity" />
+        <MudSelectItem Value="Metric.Acceleration" />
+        <MudSelectItem Value="Metric.Wattage" />
+        <MudSelectItem Value="Metric.Grade" />
+    </MudSelect>
+
     <Map ConfigureJsMethod="myMapConfig"
-                   Style="border:0px;height: 500px; width: 100%;"
-                   ZoomChanged="OnZoomChanged"
-                   OnClick="OnClick"
-                   InitialZoom = "8"
-                   InitialCenter="new Coordinate(7.71667, 52.28333)"
-                   Class="dark-mode"
-                   @ref="map">
-               
+         Style="border:0px;height: 500px; width: 100%;"
+         ZoomChanged="OnZoomChanged"
+         OnClick="OnClick"
+         InitialZoom="8"
+         InitialCenter="new Coordinate(7.71667, 52.28333)"
+         Class="dark-mode"
+         @ref="map">
+
         <Popup>
             <div class="custom-map-popup">
                 @if (context is Marker marker && !string.IsNullOrWhiteSpace(marker.Text))
@@ -42,10 +57,10 @@
         <Layers>
             <Layer LayerType="LayerType.Tile"
                    SourceType="SourceType.XYZ"
-                       Url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png" />
-            @if (graphFull is not null)
+                   Url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png" />
+            @if (displayedGraph is not null)
             {
-                List<QuadTree> quadTrees = graphFull.QuadTree.GetAllLeaves();
+                List<QuadTree> quadTrees = displayedGraph.QuadTree.GetAllLeaves();
 
                 @if (configuration.GetValue<bool>("ShowQuadTree"))
                 {
@@ -54,15 +69,15 @@
                             @foreach (var quadTree in quadTrees)
                             {
                                 <Polygon Points="@([
-                                                new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1),
-                                                new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
-                                                new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
-                                                new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
-                                                new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
-                                            ])"
-                                Fill="#0000"
-                                Stroke="#0001"
-                                StrokeThickness="2" />
+                                                                                                                                                                                                                    new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1),
+                                                                                    new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
+                                                                                    new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
+                                                                                    new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
+                                                                                    new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
+                                                                                ])"
+                                         Fill="#0000"
+                                         Stroke="#0001"
+                                         StrokeThickness="2" />
                             }
                         </Shapes>
                     </Layer>
@@ -70,38 +85,38 @@
             }
         </Layers>
     </Map>
-
-    <MudSelect T="Metric" ValueChanged="SelectedMetricChanged">
-        <MudSelectItem Value="Metric.Count"/>
-        <MudSelectItem Value="Metric.HeartRate"/>
-        <MudSelectItem Value="Metric.Velocity"/>
-        <MudSelectItem Value="Metric.Acceleration"/>
-        <MudSelectItem Value="Metric.Wattage"/>
-        <MudSelectItem Value="Metric.Grade"/>
-    </MudSelect>
 </div>
 
 @code {
     Graph displayedGraph;
-    Graph graphFull;
-    Graph graph2;
-    Graph graph3;
     Map map;
+    Account selectedAccount;
     private Metric displayedMetric;
     private Guid markerKey = Guid.NewGuid();
 
     public string popupContent;
     public Coordinate? popupCoordinate;
 
-    private void SelectedMetricChanged(Metric metric)
+    private async Task SelectedMetricChanged(Metric metric)
     {
+        if (selectedAccount is null || displayedGraph is null)
+            return;
+
         displayedMetric = metric;
-        RenderEdgesViaJS(displayedGraph);
+        await RenderEdgesViaJS(displayedGraph);
+    }
+
+    private void SelectedAccountChanged(Account account)
+    {
+        selectedAccount = account;
     }
 
     private void OnClick(Coordinate coordinate)
     {
-        var edge = graphFull.FindEdge(coordinate.Latitude, coordinate.Longitude);
+        if (selectedAccount is null)
+            return;
+
+        var edge = selectedAccount.FullGraph.FindEdge(coordinate.Latitude, coordinate.Longitude);
 
         // Instead of map.MarkersList.Clear(), resetting state tells Blazor to remove it
         if (edge is null)
@@ -111,7 +126,7 @@
             return;
         }
 
-        var center = edge.GetCenter(graphFull);
+        var center = edge.GetCenter(selectedAccount.FullGraph);
         if (center.DistanceTo(coordinate) > 100)
         {
             popupContent = null;
@@ -133,23 +148,31 @@
 
     private async void OnZoomChanged(double zoomLevel)
     {
-        Console.WriteLine(zoomLevel);
+        if (selectedAccount is null)
+            return;
+
         if (zoomLevel < 10)
         {
-            await SetGraph(graph3);
+            await SetGraph(selectedAccount.LOD3Graph);
         }
         else if (zoomLevel < 13)
         {
-            await SetGraph(graph2);
+            await SetGraph(selectedAccount.LOD2Graph);
+        }
+        else if (zoomLevel < 15)
+        {
+            await SetGraph(selectedAccount.LOD1Graph);
         }
         else
         {
-            await SetGraph(graphFull);
+            await SetGraph(selectedAccount.FullGraph);
         }
     }
 
     private async Task SetGraph(Graph graph)
     {
+        if (graph is null)
+            return;
         if (displayedGraph == graph)
             return;
 
@@ -160,11 +183,6 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-
-        var activities = await activityService.GetActivities();
-        graphFull = new(activities);
-        graph2 = new(graphFull, 40);
-        graph3 = new(graphFull, 160);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -175,46 +193,45 @@
 
             if (map != null)
             {
-                await SetGraph(graph3);
+             //   await SetGraph(graph3);
             }
         }
     }
 
     private async Task RenderEdgesViaJS(Graph targetGraph)
     {
-        
-
         var edges = targetGraph.Edges.Values
-            .Select(e => {
-                string color = string.Empty;
-                switch (displayedMetric)
-                {
-                    case Metric.Count:
-                        color = $"rgba(200,{200 - (int)(e.ActivityFileNames.Count * 15)},{200 - (int)(e.ActivityFileNames.Count * 10)},1)";
-                        break;
-                    case Metric.Velocity:
-                        color = $"rgba(200,{200 - (int)(e.Velocity.Average * 8)},{200 - (int)(e.Velocity.Average * 5)},1)";
-                        break;
-                    case Metric.HeartRate:
-                        color = $"rgba(200,{200 - (int)(e.HeartRate.Average * 1.5)},{200 - (int)(e.HeartRate.Average)},1)";
-                        break;
-                    case Metric.Wattage:
-                        color = $"rgba(200,{200 - (int)(e.Wattage.Average * 1.5)},{200 - (int)(e.Wattage.Average)},1)";
-                        break;
-                    case Metric.Acceleration:
-                        color = $"rgba(200,{200 - (int)(e.Acceleration.Average * 15)},{200 - (int)(e.Acceleration.Average * 10)},1)";
-                        break;
-                    case Metric.Grade:
-                        color = $"rgba(200,{200 - (int)(e.Grade.Average * 15)},{200 - (int)(e.Grade.Average * 10)},1)";
-                        break;
-                }
-                return new
-                {
-                    start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
-                    end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
-                    color = color
-                };
-            });
+                    .Select(e =>
+                    {
+                        string color = string.Empty;
+                        switch (displayedMetric)
+                        {
+                            case Metric.Count:
+                                color = $"rgba(200,{200 - (int)(e.ActivityFileNames.Count * 15)},{200 - (int)(e.ActivityFileNames.Count * 10)},1)";
+                                break;
+                            case Metric.Velocity:
+                                color = $"rgba(200,{200 - (int)(e.Velocity.Average * 8)},{200 - (int)(e.Velocity.Average * 5)},1)";
+                                break;
+                            case Metric.HeartRate:
+                                color = $"rgba(200,{200 - (int)(e.HeartRate.Average * 1.5)},{200 - (int)(e.HeartRate.Average)},1)";
+                                break;
+                            case Metric.Wattage:
+                                color = $"rgba(200,{200 - (int)(e.Wattage.Average * 1.5)},{200 - (int)(e.Wattage.Average)},1)";
+                                break;
+                            case Metric.Acceleration:
+                                color = $"rgba(200,{200 - (int)(e.Acceleration.Average * 15)},{200 - (int)(e.Acceleration.Average * 10)},1)";
+                                break;
+                            case Metric.Grade:
+                                color = $"rgba(200,{200 - (int)(e.Grade.Average * 15)},{200 - (int)(e.Grade.Average * 10)},1)";
+                                break;
+                        }
+                        return new
+                        {
+                            start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
+                            end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
+                            color = color
+                        };
+                    });
 
         await JS.InvokeVoidAsync("setEdges", edges);
     }

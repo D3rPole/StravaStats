@@ -1,26 +1,32 @@
 ﻿using OpenLayers.Blazor;
 using StravaStats.Helper;
+using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
     public class QuadTree
     {
-        const int maxEdges = 20;
-        const int maxDepth = 20;
-        public Extent Extent;
+        [JsonIgnore]
+        const int maxEdges = 80;
+        [JsonIgnore]
+        const int maxDepth = 30;
+        
+        public Extent Extent { get; set; }
 
-        int currentDepth = 0;
-        public QuadTree? UpperLeft;
-        public QuadTree? UpperRight;
-        public QuadTree? DownLeft;
-        public QuadTree? DownRight;
-        public List<Edge> Edges = [];
+        public int CurrentDepth { get; set; } = 0;
+        public QuadTree? UpperLeft { get; set; }
+        public QuadTree? UpperRight { get; set; }
+        public QuadTree? DownLeft { get; set; }
+        public QuadTree? DownRight { get; set; }
+        public List<Edge> Edges  { get; set; } = [];
+
+        [JsonIgnore]
         private bool isSplit => UpperLeft is not null;
 
         public QuadTree(Extent extent, int currentDepth)
         {
             Extent = extent;
-            this.currentDepth = currentDepth;
+            this.CurrentDepth = currentDepth;
         }
 
         public void AddEdge(Edge edge, Dictionary<string, Node> nodes)
@@ -41,7 +47,7 @@ namespace StravaStats.BusinessObjects
             {
                 Edges.Add(edge);
 
-                if (Edges.Count > maxEdges && currentDepth < maxDepth)
+                if (Edges.Count > maxEdges && CurrentDepth < maxDepth)
                     Split(nodes);
             }
         }
@@ -51,10 +57,10 @@ namespace StravaStats.BusinessObjects
             double midX = (Extent.X1 + Extent.X2) / 2;
             double midY = (Extent.Y1 + Extent.Y2) / 2;
 
-            UpperLeft = new(new Extent(Extent.X1, Extent.Y1, midX, midY), currentDepth + 1);
-            UpperRight = new(new Extent(midX, Extent.Y1, Extent.X2, midY), currentDepth + 1);
-            DownLeft = new(new Extent(Extent.X1, midY, midX, Extent.Y2), currentDepth + 1);
-            DownRight = new(new Extent(midX, midY, Extent.X2, Extent.Y2), currentDepth + 1);
+            UpperLeft = new(new Extent(Extent.X1, Extent.Y1, midX, midY), CurrentDepth + 1);
+            UpperRight = new(new Extent(midX, Extent.Y1, Extent.X2, midY), CurrentDepth + 1);
+            DownLeft = new(new Extent(Extent.X1, midY, midX, Extent.Y2), CurrentDepth + 1);
+            DownRight = new(new Extent(midX, midY, Extent.X2, Extent.Y2), CurrentDepth + 1);
 
             var edgesToReassign = Edges.ToList();
             Edges.Clear();

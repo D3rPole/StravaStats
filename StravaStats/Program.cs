@@ -5,12 +5,14 @@ using StravaStats.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddMudServices();
 
 builder.Services.AddSingleton<ActivityService>();
-builder.Services.AddHostedService<StravaService>();
-builder.Services.AddMudServices();
+builder.Services.AddSingleton<AccountService>();
+builder.Services.AddSingleton<StravaService>();
+
+builder.Services.AddHostedService(provider => provider.GetRequiredService<AccountService>());
 
 var app = builder.Build();
 
@@ -37,17 +39,25 @@ app.Run();
 public static class AppData
 {
     public static string DataDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "StravaStats");
+    public static string AccountsDirectory => Path.Combine(DataDirectory, "Accounts");
+
+    public const string ActivitiesStravaFileLocation = "Strava";
+    public const string ActivitiesValhallaFileLocation = "Valhalla";
+    public const string ActivitiesCacheLocation = "Cache";
+
     private static IServiceProvider _provider;
 
-    public static void Init(IServiceProvider provider) => _provider = provider;
+    public static void Init(IServiceProvider provider)
+    {
+        if (!Directory.Exists(AppData.DataDirectory))
+            Directory.CreateDirectory(AppData.DataDirectory);
+        if (!Directory.Exists(AppData.DataDirectory))
+            Directory.CreateDirectory(AppData.DataDirectory);
 
-    /// <summary>
-    /// Safely resolve a Singleton service anywhere.
-    /// </summary>
+        _provider = provider;
+    }
+
     public static T GetService<T>() => _provider.GetRequiredService<T>();
 
-    /// <summary>
-    /// Safely resolve a Scoped or Transient service by creating a temporary scope.
-    /// </summary>
     public static IServiceScope CreateScope() => _provider.CreateScope();
 }

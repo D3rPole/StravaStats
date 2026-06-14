@@ -1,4 +1,6 @@
-﻿namespace StravaStats.BusinessObjects
+﻿using System.Globalization;
+
+namespace StravaStats.BusinessObjects
 {
     public class Node
     {
@@ -13,7 +15,7 @@
 
         public string GetKey()
         {
-            return $"{Latitude.ToString("F6")},{Longitude.ToString("F6")}";
+            return $"{Latitude.ToString("F6", CultureInfo.InvariantCulture)},{Longitude.ToString("F6", CultureInfo.InvariantCulture)}";
         }
     }
 }

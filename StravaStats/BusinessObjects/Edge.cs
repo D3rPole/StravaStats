@@ -1,12 +1,16 @@
 ﻿using NetTopologySuite.Geometries;
 using StravaStats.Helper;
+using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
     public class MetricSummary
     {
+        [JsonIgnore]
         public double Average => count == 0 ? 0 : totalValue / count;
+        [JsonInclude]
         private double totalValue { get; set; }
+        [JsonInclude]
         private int count { get; set; }
         public void AddMetric(double? value)
         {

@@ -2,15 +2,37 @@
 using StravaStats.Helper;
 using System.Globalization;
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
     public class Graph
     {
-        public Dictionary<(string, string), Edge> Edges = [];
-        public Dictionary<string, List<string>> AdjacencyList = [];
-        public Dictionary<string, Node> Nodes = [];
-        public QuadTree QuadTree = new(new OpenLayers.Blazor.Extent(-180, -90, 180, 90),0);
+        [JsonConverter(typeof(TupleKeyDictionaryConverter<Edge>))]
+        public Dictionary<(string, string), Edge> Edges { get; set; } = [];
+        public Dictionary<string, List<string>> AdjacencyList { get; set; } = [];
+        public Dictionary<string, Node> Nodes { get; set; } = [];
+        public QuadTree QuadTree { get; set; } = new(new OpenLayers.Blazor.Extent(-180, -90, 180, 90), 0);
+
+        public Graph() { }
+
+        public Graph(List<Graph> graphs)
+        {
+            foreach (var graph in graphs)
+            {
+                if (graph is null)
+                    continue;
+
+                foreach (var node in graph.Nodes)
+                {
+                    AddNode(node.Value);
+                }
+                foreach (var edge in graph.Edges)
+                {
+                    AddEdge(edge.Value);
+                }
+            }
+        }
 
         public Graph(List<Activity> activities)
         {
@@ -66,7 +88,7 @@ namespace StravaStats.BusinessObjects
                     }
                 }
 
-                foreach( var point in activity.TrackingPoints)
+                foreach (var point in activity.TrackingPoints)
                 {
                     var closestEdge = QuadTree.GetClosestEdge(point.Latitude, point.Longitude, Nodes);
                     if (closestEdge is null)
@@ -76,7 +98,7 @@ namespace StravaStats.BusinessObjects
                     }
 
                     closestEdge.AddDataPoint(point);
-                    closestEdge.ActivityFileNames.Add(activity.FileName);
+                    closestEdge.ActivityFileNames.Add(activity.Id);
                 }
             }
         }
@@ -148,7 +170,7 @@ namespace StravaStats.BusinessObjects
                         AddNode(startNode);
                         AddNode(other.Nodes[nodeB]);
                         var e = AddEdge(startNode.GetKey(), nodeB);
-                        foreach(var ed in edges)
+                        foreach (var ed in edges)
                         {
                             e?.AddEdge(ed);
                         }
@@ -208,12 +230,12 @@ namespace StravaStats.BusinessObjects
             Nodes.Add(node.GetKey(), node);
         }
 
-        public void AddEdge(Node startNode, Node endNode)
+        public Edge AddEdge(Node startNode, Node endNode)
         {
-            AddEdge(startNode.GetKey(), endNode.GetKey());
+            return AddEdge(startNode.GetKey(), endNode.GetKey());
         }
 
-        public Edge? AddEdge(string startNodeKey, string endNodeKey)
+        public Edge AddEdge(string startNodeKey, string endNodeKey)
         {
             if (Edges.ContainsKey((startNodeKey, endNodeKey)) || Edges.ContainsKey((endNodeKey, startNodeKey)))
                 return GetEdge(startNodeKey, endNodeKey);
@@ -239,6 +261,12 @@ namespace StravaStats.BusinessObjects
 
             return edge;
 
+        }
+
+        public void AddEdge(Edge edge)
+        {
+            Edge e = AddEdge(edge.StartNodeKey, edge.EndNodeKey);
+            e?.AddEdge(edge);
         }
 
         public Edge? GetEdge(Node nodeA, Node nodeB)
@@ -277,14 +305,9 @@ namespace StravaStats.BusinessObjects
             return edges;
         }
 
-        private string GetNodeKey(Node node)
-        {
-            return $"{node.Latitude.ToString("F6")},{node.Longitude.ToString("F6")}";
-        }
-
         private string GetNodeKey(PolylinePoint node)
         {
-            return $"{node.Latitude.ToString("F6")},{node.Longitude.ToString("F6")}";
+            return $"{node.Latitude.ToString("F6", CultureInfo.InvariantCulture)},{node.Longitude.ToString("F6", CultureInfo.InvariantCulture)}";
         }
     }
 }
