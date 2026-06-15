@@ -21,15 +21,15 @@ namespace StravaStats.Services
 
             List<Task> tasks = [];
             List<Activity> activities = [];
-            foreach (string file in Directory.EnumerateFiles(stravaActivitiesPath))
+            foreach (string stravaFile in Directory.EnumerateFiles(stravaActivitiesPath))
             {
                 var task = Task.Run(async () =>
                 {
-                    string activityCachedFile = Path.Combine(activityCache, Path.GetFileNameWithoutExtension(file) + ".json");
+                    string activityCachedFile = Path.Combine(activityCache, Path.GetFileNameWithoutExtension(stravaFile) + ".json");
                     if (File.Exists(activityCachedFile))
                     {
-                        string actJson = await File.ReadAllTextAsync(activityCachedFile);
-                        Activity? act = JsonSerializer.Deserialize<Activity>(actJson);
+                        using var fileStream = File.OpenRead(activityCachedFile);
+                        Activity? act = JsonSerializer.Deserialize<Activity>(fileStream);
 
                         if (act is not null)
                         {
@@ -37,17 +37,16 @@ namespace StravaStats.Services
                             return;
                         }
                     }
-
-                    string jsonString = await File.ReadAllTextAsync(file);
-                    var rawActivity = JsonSerializer.Deserialize<RawActivity>(jsonString);
+                    using var stravaFileStream = File.OpenRead(stravaFile);
+                    var rawActivity = JsonSerializer.Deserialize<RawActivity>(stravaFileStream);
                     if (rawActivity is null)
                     {
-                        logger.LogError($"Couldn't load Activity: {file}");
+                        logger.LogError($"Couldn't load Activity: {stravaFile}");
                         return;
                     }
                     if (rawActivity.Distance is null)
                         return;
-                    var activity = new Activity(rawActivity, Path.GetFileNameWithoutExtension(file));
+                    var activity = new Activity(rawActivity, Path.GetFileNameWithoutExtension(stravaFile));
                     await activity.MatchRoads(activitiesPath);
                     string activityJson = JsonSerializer.Serialize(activity);
                     File.WriteAllText(activityCachedFile, activityJson);

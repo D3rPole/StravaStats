@@ -5,7 +5,10 @@ using StravaStats.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddRazorComponents().AddInteractiveServerComponents(options =>
+{
+    options.DetailedErrors = true; 
+});
 builder.Services.AddMudServices();
 
 builder.Services.AddSingleton<ActivityService>();

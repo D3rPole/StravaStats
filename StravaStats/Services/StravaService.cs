@@ -42,8 +42,8 @@ namespace StravaStats.Services
             if (token is not null)
             {
                 string tokenFilePath = Path.Combine(account.AccountDirectory, "Account.json");
-                File.WriteAllText(tokenFilePath, responseString);
                 account.Token = token;
+                File.WriteAllText(tokenFilePath, JsonSerializer.Serialize(account));
                 logger.LogInformation("Token refreshed.");
                 return true;
             }

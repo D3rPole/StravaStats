@@ -24,6 +24,12 @@
         <MudSelectItem Value="Metric.Grade" />
     </MudSelect>
 
+    <MudSelect Label="Map" T="String" @bind-Value="@mapLink">
+        <MudSelectItem Value="@("""https://tile.openstreetmap.de/{z}/{x}/{y}.png""")">Default OSM</MudSelectItem>
+        <MudSelectItem Value="@("""https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png""")">Darkmode</MudSelectItem>
+        <MudSelectItem Value="@("""https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg""")">Satelite</MudSelectItem>
+    </MudSelect>
+
     <Map ConfigureJsMethod="myMapConfig"
          Style="border:0px;height: 500px; width: 100%;"
          ZoomChanged="OnZoomChanged"
@@ -31,7 +37,8 @@
          InitialZoom="8"
          InitialCenter="new Coordinate(7.71667, 52.28333)"
          Class="dark-mode"
-         @ref="map">
+         @ref="map"
+         @key="@mapLink">
 
         <Popup>
             <div class="custom-map-popup">
@@ -57,7 +64,7 @@
         <Layers>
             <Layer LayerType="LayerType.Tile"
                    SourceType="SourceType.XYZ"
-                   Url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png" />
+                   Url="@mapLink" />
             @if (displayedGraph is not null)
             {
                 List<QuadTree> quadTrees = displayedGraph.QuadTree.GetAllLeaves();
@@ -69,12 +76,12 @@
                             @foreach (var quadTree in quadTrees)
                             {
                                 <Polygon Points="@([
-                                                                                                                                                                                                                    new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1),
-                                                                                    new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
-                                                                                    new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
-                                                                                    new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
-                                                                                    new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
-                                                                                ])"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ])"
                                          Fill="#0000"
                                          Stroke="#0001"
                                          StrokeThickness="2" />
@@ -94,6 +101,19 @@
     private Metric displayedMetric;
     private Guid markerKey = Guid.NewGuid();
 
+    public string mapLink
+    {
+        get
+        {
+            return field;
+        }
+        set
+        {
+            field = value;
+            StateHasChanged();
+        }
+    }
+
     public string popupContent;
     public Coordinate? popupCoordinate;
 
@@ -103,12 +123,15 @@
             return;
 
         displayedMetric = metric;
-        await RenderEdgesViaJS(displayedGraph);
+        displayedGraph = null;
+        UpdateDisplayedGraph();
     }
 
-    private void SelectedAccountChanged(Account account)
+    private async Task SelectedAccountChanged(Account account)
     {
         selectedAccount = account;
+        displayedGraph = null;
+        UpdateDisplayedGraph();
     }
 
     private void OnClick(Coordinate coordinate)
@@ -146,10 +169,12 @@
         StateHasChanged();
     }
 
-    private async void OnZoomChanged(double zoomLevel)
+    private async void UpdateDisplayedGraph()
     {
         if (selectedAccount is null)
             return;
+
+        double zoomLevel = map.Zoom;
 
         if (zoomLevel < 10)
         {
@@ -167,6 +192,11 @@
         {
             await SetGraph(selectedAccount.FullGraph);
         }
+    }
+
+    private async void OnZoomChanged(double zoomLevel)
+    {
+        UpdateDisplayedGraph();
     }
 
     private async Task SetGraph(Graph graph)
@@ -187,14 +217,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        await base.OnAfterRenderAsync(firstRender);
         if (firstRender)
         {
-            await Task.Delay(250);
-
-            if (map != null)
-            {
-             //   await SetGraph(graph3);
-            }
+            mapLink = "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png";
+            await InitializeJS();
         }
     }
 
@@ -203,36 +230,55 @@
         var edges = targetGraph.Edges.Values
                     .Select(e =>
                     {
-                        string color = string.Empty;
+                        BusinessObjects.Color color = new();
+                        float value = 0;
                         switch (displayedMetric)
                         {
                             case Metric.Count:
-                                color = $"rgba(200,{200 - (int)(e.ActivityFileNames.Count * 15)},{200 - (int)(e.ActivityFileNames.Count * 10)},1)";
+                                value = e.ActivityFileNames.Count / 10f;
                                 break;
                             case Metric.Velocity:
-                                color = $"rgba(200,{200 - (int)(e.Velocity.Average * 8)},{200 - (int)(e.Velocity.Average * 5)},1)";
+                                value = (float)e.Velocity.Average / 40f;
                                 break;
                             case Metric.HeartRate:
-                                color = $"rgba(200,{200 - (int)(e.HeartRate.Average * 1.5)},{200 - (int)(e.HeartRate.Average)},1)";
+                                value = (float)e.HeartRate.Average / 200f;
                                 break;
                             case Metric.Wattage:
-                                color = $"rgba(200,{200 - (int)(e.Wattage.Average * 1.5)},{200 - (int)(e.Wattage.Average)},1)";
+                                value = (float)e.Wattage.Average / 200f;
                                 break;
                             case Metric.Acceleration:
-                                color = $"rgba(200,{200 - (int)(e.Acceleration.Average * 15)},{200 - (int)(e.Acceleration.Average * 10)},1)";
+                                value = (float)e.Acceleration.Average / 5f;
                                 break;
                             case Metric.Grade:
-                                color = $"rgba(200,{200 - (int)(e.Grade.Average * 15)},{200 - (int)(e.Grade.Average * 10)},1)";
+                                value = (float)e.Grade.Average / 20f;
                                 break;
                         }
+                        value = Math.Clamp(value, 0f, 1f);
+                        color = new(1f, 1f - value * 0.7f, 1f - value);
+                        color.R = (byte)(color.R / 50 * 50);
+                        color.G = (byte)(color.G / 50 * 50);
+                        color.B = (byte)(color.B / 50 * 50);
+                        string colorString = $"rgba({color.R},{color.G},{color.B},1)";
                         return new
                         {
                             start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
                             end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
-                            color = color
+                            color = colorString
                         };
                     });
-
         await JS.InvokeVoidAsync("setEdges", edges);
+    }
+
+    [JSInvokable]
+    public void MapInitialized()
+    {
+        displayedGraph = null;
+        UpdateDisplayedGraph();
+    }
+
+    private async Task InitializeJS()
+    {
+        var objRef = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("registerBlazorComponent", objRef);
     }
 }

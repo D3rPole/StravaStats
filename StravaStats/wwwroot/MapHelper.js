@@ -1,8 +1,20 @@
-window.myMapConfig = function (olMap) {
-    window._myOLMap = olMap;
+let blazorComponentRef = null;
+
+function registerBlazorComponent(dotNetRef) {
+    blazorComponentRef = dotNetRef;
 }
 
+window.myMapConfig = function (olMap) {
+    window._myOLMap = olMap;
+    window._edgeLayer = null;
+    blazorComponentRef.invokeMethodAsync('MapInitialized');
+}
+
+// Keep a cache of styles outside the function scope
+var styleCache = {};
+
 window.setEdges = function (edges) {
+    styleCache = {}
     const map = window._myOLMap;
     if (!map) { console.error("Map not ready"); return; }
 
@@ -15,9 +27,21 @@ window.setEdges = function (edges) {
     if (!window._edgeLayer) {
         window._edgeLayer = new ol.layer.Vector({
             source: new ol.source.Vector(),
-            style: f => new ol.style.Style({
-                stroke: new ol.style.Stroke({ color: f.get('color'), width: 4 })
-            })
+            // Optimised style function using the cache
+            style: function (feature) {
+                const color = feature.get('color') || '#ffffff';
+
+                // If this color hasn't been used yet, create and cache it
+                if (!styleCache[color]) {
+                    styleCache[color] = new ol.style.Style({
+                        stroke: new ol.style.Stroke({
+                            color: color,
+                            width: 4
+                        })
+                    });
+                }
+                return styleCache[color];
+            }
         });
         map.addLayer(window._edgeLayer);
     }

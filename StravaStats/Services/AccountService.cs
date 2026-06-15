@@ -15,8 +15,9 @@ namespace StravaStats.Services
                     string accountFilePath = Path.Combine(accountDir, "Account.json");
                     string accountActivitiesPath = Path.Combine(accountDir, "Activities");
 
-                    string accountJsonString = await File.ReadAllTextAsync(accountFilePath);
-                    Account? account = JsonSerializer.Deserialize<Account>(accountJsonString);
+                    var fileStream = File.OpenRead(accountFilePath);
+                    Account? account = JsonSerializer.Deserialize<Account>(fileStream);
+                    await fileStream.DisposeAsync();
                     if (account is null)
                     {
                         logger.LogError("Couldn't Parse Accountfile");

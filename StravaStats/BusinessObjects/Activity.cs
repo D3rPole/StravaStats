@@ -63,8 +63,9 @@ namespace StravaStats.BusinessObjects
 
             if (File.Exists(cacheFilePath))
             {
-                string cachedContent = await File.ReadAllTextAsync(cacheFilePath);
-                ValhallaResponse = JsonSerializer.Deserialize<ValhallaResponse>(cachedContent);
+                using var fileStream = File.OpenRead(cacheFilePath);
+                ValhallaResponse = JsonSerializer.Deserialize<ValhallaResponse>(fileStream);
+
                 if (ValhallaResponse is not null)
                 {
                     MatchTrackingPointsToValhallaResponse();
