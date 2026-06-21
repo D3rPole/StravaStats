@@ -4,14 +4,6 @@ using System.Text.Json.Serialization;
 
 namespace StravaStats.Services
 {
-    public class ActivityResponse
-    {
-        [JsonPropertyName("id")]
-        public long Id { get; set; }
-
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
-    }
     public class StravaService(IConfiguration configuration, ILogger<StravaService> logger)
     {
         public async Task<bool> RefreshToken(Account account)
@@ -71,8 +63,8 @@ namespace StravaStats.Services
             httpClient.BaseAddress = new Uri("https://www.strava.com/api/v3/");
             httpClient.DefaultRequestHeaders.Authorization = new("Bearer", account.Token.AccessToken);
 
-            List<ActivityResponse> activities = [];
-            List<ActivityResponse>? currentRequestActivities = null;
+            List<ActivityHeader> activities = [];
+            List<ActivityHeader>? currentRequestActivities = null;
             int page = 1;
             do
             {
@@ -82,8 +74,8 @@ namespace StravaStats.Services
                     logger.LogError(response.ReasonPhrase);
                     return;
                 }
-                var str = await response.Content.ReadAsStringAsync();
-                currentRequestActivities = JsonSerializer.Deserialize<List<ActivityResponse>>(str);
+                var str = await response.Content.ReadAsStreamAsync();
+                currentRequestActivities = JsonSerializer.Deserialize<List<ActivityHeader>>(str);
                 activities.AddRange(currentRequestActivities ?? []);
                 page++;
             } while (currentRequestActivities is not null && currentRequestActivities.Count > 0);
@@ -99,7 +91,7 @@ namespace StravaStats.Services
                 Directory.CreateDirectory(targetDirectory);
 
             int downloaded = 0;
-            foreach (ActivityResponse activity in activities)
+            foreach (ActivityHeader activity in activities)
             {
                 string activityPath = Path.Combine(targetDirectory, activity.Id + ".json");
                 if (File.Exists(activityPath))
@@ -112,8 +104,10 @@ namespace StravaStats.Services
                     continue;
                 }
 
-                var stringResponse = await response.Content.ReadAsStringAsync();
-                File.WriteAllText(activityPath, stringResponse);
+                var streamResponse = await response.Content.ReadAsStreamAsync();
+                var rawActivity = JsonSerializer.Deserialize<RawActivity>(streamResponse);
+                rawActivity.ActivityHeader = activity;
+                File.WriteAllText(activityPath, JsonSerializer.Serialize(rawActivity));
                 downloaded++;
                 logger.LogInformation($"Downloaded {downloaded} / {activities.Count} Activities for {account.Name}");
             }

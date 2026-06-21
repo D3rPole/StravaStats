@@ -1,3 +1,4 @@
+using MudBlazor.Extensions;
 using MudBlazor.Services;
 using StravaStats.Components;
 using StravaStats.Services;
@@ -9,7 +10,7 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents(options =>
 {
     options.DetailedErrors = true; 
 });
-builder.Services.AddMudServices();
+builder.Services.AddMudServicesWithExtensions();
 
 builder.Services.AddSingleton<ActivityService>();
 builder.Services.AddSingleton<AccountService>();
@@ -30,6 +31,7 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();
+app.Use(MudExWebApp.MudExMiddleware);
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

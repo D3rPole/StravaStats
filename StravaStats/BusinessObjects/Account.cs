@@ -17,10 +17,30 @@ namespace StravaStats.BusinessObjects
         public Token Token { get; set; }
 
         [JsonIgnore]
-        public List<Activity> Activities { get; set; } = [];
+        public List<Activity> Activities
+        {
+            get => field; set
+            {
+                field = value;
+                if (field is null || field.Count == 0)
+                    return;
+                StartDateRange = field.FirstOrDefault(a => a.ActivityHeader.StartDate is not null).ActivityHeader.StartDate ?? DateTime.MinValue;
+                EndDateRange = StartDateRange;
+                foreach (var activity in field)
+                {
+                    if(activity.ActivityHeader.StartDate is not null && activity.ActivityHeader.StartDate.Value < StartDateRange)
+                        StartDateRange = activity.ActivityHeader.StartDate.Value;
+                    if(activity.ActivityHeader.StartDate is not null && activity.ActivityHeader.StartDate.Value > EndDateRange)
+                        EndDateRange = activity.ActivityHeader.StartDate.Value;
+                }
+            }
+        }
 
         [JsonIgnore]
         public Graph FullGraph { get; set; }
+
+        [JsonIgnore]
+        public Graph Selection { get; set; }
 
         [JsonIgnore]
         public Graph LOD1Graph { get; set; }
@@ -34,18 +54,35 @@ namespace StravaStats.BusinessObjects
         [JsonIgnore]
         public string AccountDirectory { get; set; }
 
+        [JsonIgnore]
+        public DateTime StartDateRange { get; set; }
+
+        [JsonIgnore]
+        public DateTime EndDateRange { get; set; }
+
         public async Task BuildGraphs()
         {
             long ticks = DateTime.Now.Ticks;
 
             FullGraph = new(Activities.Select(a => a.Graph).ToList());
-            var task1 = Task.Run(() => LOD1Graph = new(FullGraph, 40));
-            var task2 = Task.Run(() => LOD2Graph = new(FullGraph, 80));
-            var task3 = Task.Run(() => LOD3Graph = new(FullGraph, 160));
-            await Task.WhenAll(task1, task2, task3);
+            Selection = FullGraph;
 
             double ms = (double)(DateTime.Now.Ticks - ticks) / TimeSpan.TicksPerMillisecond;
             Console.WriteLine(Name + $": {ms:F2} ms");
+        }
+
+        public void ResetSelection()
+        {
+            Selection = FullGraph;
+        }
+
+        public void SelectRange(DateTime from, DateTime to)
+        {
+            var selection = Activities.Where(a =>
+                a.ActivityHeader.StartDate is not null &&
+                a.ActivityHeader.StartDate >= from &&
+                a.ActivityHeader.StartDate <= to).Select(a => a.Graph).ToList();
+            Selection = new(selection);
         }
     }
 

@@ -16,9 +16,9 @@ public class Color
     }
     public Color(float r, float g, float b)
     {
-        R = (byte)(r * 255);
-        G = (byte)(g * 255);
-        B = (byte)(b * 255);
+        R = (byte)(Math.Clamp(r, 0, 1) * 255);
+        G = (byte)(Math.Clamp(g, 0, 1) * 255);
+        B = (byte)(Math.Clamp(b, 0, 1) * 255);
     }
     public Color()
     {

@@ -13,6 +13,7 @@ namespace StravaStats.BusinessObjects
         public Dictionary<string, List<string>> AdjacencyList { get; set; } = [];
         public Dictionary<string, Node> Nodes { get; set; } = [];
         public QuadTree QuadTree { get; set; } = new(new OpenLayers.Blazor.Extent(-180, -90, 180, 90), 0);
+        public Metrics Metrics { get; set; } = new();
 
         public Graph() { }
 
@@ -98,7 +99,7 @@ namespace StravaStats.BusinessObjects
                     }
 
                     closestEdge.AddDataPoint(point);
-                    closestEdge.ActivityFileNames.Add(activity.Id);
+                    closestEdge.ActivityFileNames.Add(activity.ActivityHeader.Id.ToString());
                 }
             }
         }
@@ -266,6 +267,7 @@ namespace StravaStats.BusinessObjects
         public void AddEdge(Edge edge)
         {
             Edge e = AddEdge(edge.StartNodeKey, edge.EndNodeKey);
+            Metrics.AddEdge(e);
             e?.AddEdge(edge);
         }
 

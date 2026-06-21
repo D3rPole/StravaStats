@@ -46,7 +46,7 @@ namespace StravaStats.Services
                     }
                     if (rawActivity.Distance is null)
                         return;
-                    var activity = new Activity(rawActivity, Path.GetFileNameWithoutExtension(stravaFile));
+                    var activity = new Activity(rawActivity);
                     await activity.MatchRoads(activitiesPath);
                     string activityJson = JsonSerializer.Serialize(activity);
                     File.WriteAllText(activityCachedFile, activityJson);

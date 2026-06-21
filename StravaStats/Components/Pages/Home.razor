@@ -1,6 +1,9 @@
 ﻿@page "/"
+@using Nextended.Core.Contracts
+@using Nextended.Core.Types
 @using OpenLayers.Blazor
 @using Services
+@using MudBlazor.Extensions.Helper
 @using BusinessObjects
 @using Enums
 @inject AccountService accountService
@@ -8,93 +11,174 @@
 @inject IJSRuntime JS
 
 <div>
-    <MudSelect Label="Account" T="Account" ValueChanged="SelectedAccountChanged">
-        @foreach (var account in accountService.Accounts)
-        {
-            <MudSelectItem Value="@account">@account.Name</MudSelectItem>
-        }
-    </MudSelect>
-
-    <MudSelect Label="Metric" T="Metric" ValueChanged="SelectedMetricChanged">
-        <MudSelectItem Value="Metric.Count" />
-        <MudSelectItem Value="Metric.HeartRate" />
-        <MudSelectItem Value="Metric.Velocity" />
-        <MudSelectItem Value="Metric.Acceleration" />
-        <MudSelectItem Value="Metric.Wattage" />
-        <MudSelectItem Value="Metric.Grade" />
-    </MudSelect>
-
-    <MudSelect Label="Map" T="String" @bind-Value="@mapLink">
-        <MudSelectItem Value="@("""https://tile.openstreetmap.de/{z}/{x}/{y}.png""")">Default OSM</MudSelectItem>
-        <MudSelectItem Value="@("""https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png""")">Darkmode</MudSelectItem>
-        <MudSelectItem Value="@("""https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg""")">Satelite</MudSelectItem>
-    </MudSelect>
-
-    <Map ConfigureJsMethod="myMapConfig"
-         Style="border:0px;height: 500px; width: 100%;"
-         ZoomChanged="OnZoomChanged"
-         OnClick="OnClick"
-         InitialZoom="8"
-         InitialCenter="new Coordinate(7.71667, 52.28333)"
-         Class="dark-mode"
-         @ref="map"
-         @key="@mapLink">
-
-        <Popup>
-            <div class="custom-map-popup">
-                @if (context is Marker marker && !string.IsNullOrWhiteSpace(marker.Text))
+    <MudCard Class="ma-2">
+        <div class="d-flex">
+            <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="ResetClicked" Class="ma-2">Reset</MudButton>
+            <MudDatePicker Date="Start"
+                           DateChanged="OnStartDateChanged"
+                           Class="ma-2" />
+            <MudDatePicker Date="End"
+                           DateChanged="OnEndDateChanged"
+                           Class="ma-2" />
+            <MudExDateRangeSlider @ref="_slider"
+                                  Mode="_mode"
+                                  EnableMouseWheelZoom="_zoom"
+                                  SizeRange="@_sizeRange"
+                                  Value="dateRange"
+                                  ValueChanged="OnRangeChanged"
+                                  AllowWholeRangeDrag="true" 
+                                  Class="ma-2"/>
+        </div>
+        <MudDivider/>
+        <div class="d-flex">
+            <MudSelect Label="Account" T="Account" ValueChanged="SelectedAccountChanged" Class="pa-2">
+                @foreach (var account in accountService.Accounts)
                 {
-                    @foreach (var line in marker.Text.Split('\n'))
+                    <MudSelectItem Value="@account">@account.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect Label="Metric" T="Metric" ValueChanged="SelectedMetricChanged" Class="pa-2">
+                <MudSelectItem Value="Metric.Count" />
+                <MudSelectItem Value="Metric.HeartRate" />
+                <MudSelectItem Value="Metric.Velocity" />
+                <MudSelectItem Value="Metric.Acceleration" />
+                <MudSelectItem Value="Metric.Wattage" />
+                <MudSelectItem Value="Metric.Grade" />
+            </MudSelect>
+
+            <MudSelect Label="Map" T="String" @bind-Value="@mapLink" Class="pa-2">
+                <MudSelectItem Value="@("""https://tile.openstreetmap.de/{z}/{x}/{y}.png""")">Default OSM</MudSelectItem>
+                <MudSelectItem Value="@("""https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png""")">Darkmode</MudSelectItem>
+                <MudSelectItem Value="@("""https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg""")">Satelite</MudSelectItem>
+            </MudSelect>
+        </div>
+        @if (displayedGraph is not null && displayedGraph.Edges.Count() > 0)
+        {
+            <MudCard>
+                <MudText Typo="Typo.h5">Stats</MudText>
+                <MudText Typo="Typo.body1">Max Velocity: @($"{displayedGraph.Metrics.Speed.MaxValue:F2}") Km/h</MudText>
+                <MudText Typo="Typo.body1">Max Acceleration: @($"{displayedGraph.Metrics.Acceleration.MaxValue:F2}") m/s²</MudText>
+                <MudText Typo="Typo.body1">Max Wattage: @($"{displayedGraph.Metrics.Wattage.MaxValue:F2}") W</MudText>
+                <MudText Typo="Typo.body1">Max Heartrate: @($"{displayedGraph.Metrics.HeartRate.MaxValue:F2}") BPM</MudText>
+                <MudText Typo="Typo.body1">Max Grade: @($"{displayedGraph.Metrics.Grade.MaxValue:F2}") %</MudText>
+            </MudCard>
+        }
+    </MudCard>
+
+    <div id="Map">
+        <Map ConfigureJsMethod="myMapConfig"
+             Style="border:0px;height: 500px; width: 100%;"
+             ZoomChanged="OnZoomChanged"
+             OnClick="OnClick"
+             InitialZoom="8"
+             InitialCenter="new Coordinate(7.71667, 52.28333)"
+             @ref="map"
+             @key="@mapLink">
+
+            <Popup>
+                <div class="custom-map-popup">
+                    @if (context is Marker marker && !string.IsNullOrWhiteSpace(marker.Text))
                     {
-                        <div class="popup-line">@line</div>
+                        @foreach (var line in marker.Text.Split('\n'))
+                        {
+                            <div class="popup-line">@line</div>
+                        }
+                    }
+                </div>
+            </Popup>
+            <Features>
+                @if (popupCoordinate != null && !string.IsNullOrWhiteSpace(popupContent))
+                {
+                    <Marker Type="MarkerType.MarkerFlag"
+                            Coordinate="popupCoordinate.Value"
+                            Text="@popupContent"
+                            Popup
+                            @key="markerKey" />
+                }
+            </Features>
+            <Layers>
+                <Layer LayerType="LayerType.Tile"
+                       SourceType="SourceType.XYZ"
+                       Url="@mapLink" />
+                @if (displayedGraph is not null)
+                {
+                    List<QuadTree> quadTrees = displayedGraph.QuadTree.GetAllLeaves();
+
+                    @if (configuration.GetValue<bool>("ShowQuadTree"))
+                    {
+                        <Layer LayerType="LayerType.Vector" SourceType="SourceType.Vector">
+                            <Shapes>
+                                @foreach (var quadTree in quadTrees)
+                                {
+                                    <Polygon Points="@([
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ])"
+                                             Fill="#0000"
+                                             Stroke="#0001"
+                                             StrokeThickness="2" />
+                                }
+                            </Shapes>
+                        </Layer>
                     }
                 }
-            </div>
-        </Popup>
-        <Features>
-            @if (popupCoordinate != null && !string.IsNullOrWhiteSpace(popupContent))
-            {
-                <Marker Type="MarkerType.MarkerFlag"
-                        Coordinate="popupCoordinate.Value"
-                        Text="@popupContent"
-                        Popup
-                        @key="markerKey" />
-            }
-        </Features>
-        <Layers>
-            <Layer LayerType="LayerType.Tile"
-                   SourceType="SourceType.XYZ"
-                   Url="@mapLink" />
-            @if (displayedGraph is not null)
-            {
-                List<QuadTree> quadTrees = displayedGraph.QuadTree.GetAllLeaves();
-
-                @if (configuration.GetValue<bool>("ShowQuadTree"))
-                {
-                    <Layer LayerType="LayerType.Vector" SourceType="SourceType.Vector">
-                        <Shapes>
-                            @foreach (var quadTree in quadTrees)
-                            {
-                                <Polygon Points="@([
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ])"
-                                         Fill="#0000"
-                                         Stroke="#0001"
-                                         StrokeThickness="2" />
-                            }
-                        </Shapes>
-                    </Layer>
-                }
-            }
-        </Layers>
-    </Map>
+            </Layers>
+        </Map>
+    </div>
 </div>
 
 @code {
+    private MudExDateRangeSlider? _slider;
+    private DateRangeSliderMode _mode = DateRangeSliderMode.Day;
+    private bool _zoom = true;
+    private static readonly DateOnly Today = DateOnly.FromDateTime(DateTime.Today);
+    private IRange<DateOnly> _sizeRange = new RangeOf<DateOnly>(Today.AddYears(-2), Today.AddYears(2), null);
+    private DateTime Start
+    {
+        get => field; set
+        {
+            field = value;
+            manualRangeChange = true;
+            dateRange = new RangeOf<DateOnly>(DateOnly.FromDateTime(value), dateRange.End, null);
+        }
+    }
+    private DateTime End
+    {
+        get => field; set
+        {
+            field = value;
+            manualRangeChange = true;
+            dateRange = new RangeOf<DateOnly>(dateRange.Start, DateOnly.FromDateTime(value), null);
+        }
+    }
+    private bool manualRangeChange;
+    private bool uiStartChange;
+    private bool uiEndChange;
+
+    private IRange<DateOnly> dateRange
+    {
+        get => field; set
+        {
+            field = value;
+            if (dateRange is null)
+                return;
+            if (manualRangeChange)
+            {
+                manualRangeChange = false;
+                return;
+            }
+            uiStartChange = true;
+            uiEndChange = true;
+            Start = field.Start.ToDateTime(TimeOnly.MinValue);
+            End = field.End.ToDateTime(TimeOnly.MinValue);
+        }
+    }
+
+    private bool isLoading;
     Graph displayedGraph;
     Map map;
     Account selectedAccount;
@@ -117,6 +201,48 @@
     public string popupContent;
     public Coordinate? popupCoordinate;
 
+
+    private void OnRangeChanged(IRange<DateOnly> newValue)
+    {
+        dateRange = newValue;
+
+        if (dateRange is null)
+        {
+            ResetClicked();
+            return;
+        }
+
+        if (selectedAccount is null)
+            return;
+        selectedAccount.SelectRange(Start, End);
+        UpdateDisplayedGraph();
+    }
+
+    private void OnStartDateChanged(DateTime? value)
+    {
+        if (value is null)
+            return;
+        Start = value.Value;
+    }
+
+    private void OnEndDateChanged(DateTime? value)
+    {
+        if (value is null)
+            return;
+        End = value.Value;
+    }
+
+    private void ResetClicked()
+    {
+        if (selectedAccount is null)
+            return;
+        selectedAccount.ResetSelection();
+        OnStartDateChanged(selectedAccount.StartDateRange);
+        OnEndDateChanged(selectedAccount.EndDateRange);
+        _sizeRange = dateRange;
+        UpdateDisplayedGraph();
+    }
+
     private async Task SelectedMetricChanged(Metric metric)
     {
         if (selectedAccount is null || displayedGraph is null)
@@ -132,6 +258,13 @@
         selectedAccount = account;
         displayedGraph = null;
         UpdateDisplayedGraph();
+
+        if (selectedAccount is null)
+            return;
+
+        Start = selectedAccount.StartDateRange;
+        End = selectedAccount.EndDateRange;
+        _sizeRange = dateRange;
     }
 
     private void OnClick(Coordinate coordinate)
@@ -139,7 +272,7 @@
         if (selectedAccount is null)
             return;
 
-        var edge = selectedAccount.FullGraph.FindEdge(coordinate.Latitude, coordinate.Longitude);
+        var edge = displayedGraph.FindEdge(coordinate.Latitude, coordinate.Longitude);
 
         // Instead of map.MarkersList.Clear(), resetting state tells Blazor to remove it
         if (edge is null)
@@ -160,11 +293,11 @@
         markerKey = Guid.NewGuid();
         popupCoordinate = center;
         popupContent = $"Total Activities: {edge.ActivityFileNames.Count}\n" +
-                        $"Average Heartrate: {edge.HeartRate.Average:F2} BPM\n" +
-                        $"Grade: {edge.Grade.Average:F2} %\n" +
-                        $"Average Speed: {edge.Velocity.Average:F2} Km/h\n" +
-                        $"Average Acceleration: {edge.Acceleration.Average:F2} m/s²\n" +
-                        $"Average Wattage: {edge.Wattage.Average:F2} W\n";
+                        $"Average Heartrate: {edge.Metrics.HeartRate.Average:F2} BPM\n" +
+                        $"Grade: {edge.Metrics.Grade.Average:F2} %\n" +
+                        $"Average Speed: {edge.Metrics.Speed.Average:F2} Km/h\n" +
+                        $"Average Acceleration: {edge.Metrics.Acceleration.Average:F2} m/s²\n" +
+                        $"Average Wattage: {edge.Metrics.Wattage.Average:F2} W\n";
 
         StateHasChanged();
     }
@@ -174,24 +307,7 @@
         if (selectedAccount is null)
             return;
 
-        double zoomLevel = map.Zoom;
-
-        if (zoomLevel < 10)
-        {
-            await SetGraph(selectedAccount.LOD3Graph);
-        }
-        else if (zoomLevel < 13)
-        {
-            await SetGraph(selectedAccount.LOD2Graph);
-        }
-        else if (zoomLevel < 15)
-        {
-            await SetGraph(selectedAccount.LOD1Graph);
-        }
-        else
-        {
-            await SetGraph(selectedAccount.FullGraph);
-        }
+        await SetGraph(selectedAccount.Selection);
     }
 
     private async void OnZoomChanged(double zoomLevel)
@@ -212,6 +328,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        dateRange = new RangeOf<DateOnly>(Today.AddMonths(-3), Today.AddMonths(3), null);
         await base.OnInitializedAsync();
     }
 
@@ -238,23 +355,28 @@
                                 value = e.ActivityFileNames.Count / 10f;
                                 break;
                             case Metric.Velocity:
-                                value = (float)e.Velocity.Average / 40f;
+                                value = (float)e.Metrics.Speed.Average / 25f;
                                 break;
                             case Metric.HeartRate:
-                                value = (float)e.HeartRate.Average / 200f;
+                                value = (float)e.Metrics.HeartRate.Average / 150f;
                                 break;
                             case Metric.Wattage:
-                                value = (float)e.Wattage.Average / 200f;
+                                value = (float)e.Metrics.Wattage.Average / 100f;
                                 break;
                             case Metric.Acceleration:
-                                value = (float)e.Acceleration.Average / 5f;
+                                value = (float)e.Metrics.Acceleration.Average * 2f;
                                 break;
                             case Metric.Grade:
-                                value = (float)e.Grade.Average / 20f;
+                                value = (float)e.Metrics.Grade.Average / 12f;
                                 break;
                         }
-                        value = Math.Clamp(value, 0f, 1f);
-                        color = new(1f, 1f - value * 0.7f, 1f - value);
+                        float positiveValue = Math.Clamp(value, 0, 2);
+                        float negativeValue = Math.Clamp(-value, 0, 2);
+                        color = new(
+                            1f - negativeValue,
+                            1f - positiveValue * 0.7f - negativeValue * 0.7f,
+                            1f - positiveValue);
+
                         color.R = (byte)(color.R / 50 * 50);
                         color.G = (byte)(color.G / 50 * 50);
                         color.B = (byte)(color.B / 50 * 50);
@@ -265,8 +387,21 @@
                             end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
                             color = colorString
                         };
-                    });
-        await JS.InvokeVoidAsync("setEdges", edges);
+                    }).ToList();
+
+        double[] flatCoordinates = new double[targetGraph.Edges.Count * 4];
+        string[] colors = new string[targetGraph.Edges.Count];
+        for (int i = 0; i < edges.Count(); i++)
+        {
+            var edge = edges[i];
+            colors[i] = edge.color;
+            flatCoordinates[i * 4 + 0] = edge.start[0];
+            flatCoordinates[i * 4 + 1] = edge.start[1];
+            flatCoordinates[i * 4 + 2] = edge.end[0];
+            flatCoordinates[i * 4 + 3] = edge.end[1];
+        }
+
+        JS.InvokeVoidAsync("setEdges", flatCoordinates, colors);
     }
 
     [JSInvokable]
@@ -274,6 +409,12 @@
     {
         displayedGraph = null;
         UpdateDisplayedGraph();
+    }
+
+    [JSInvokable]
+    public void SetLoadingState(bool isLoading)
+    {
+        this.isLoading = isLoading;
     }
 
     private async Task InitializeJS()

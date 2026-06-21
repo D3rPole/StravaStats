@@ -1,11 +1,12 @@
-﻿using System.Text.Json;
+﻿using Microsoft.AspNetCore.Mvc.Diagnostics;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
     public class Activity
     {
-        public string Id { get; set; }
+        public ActivityHeader ActivityHeader { get; set; }
 
         public List<TrackingPoint> TrackingPoints { get; set; } = [];
 
@@ -19,18 +20,19 @@ namespace StravaStats.BusinessObjects
 
         public Activity() { }
 
-        public Activity(RawActivity rawActivity, string Id)
+        public Activity(RawActivity rawActivity)
         {
-            this.Id = Id;
+            if (rawActivity.ActivityHeader is not null)
+                this.ActivityHeader = rawActivity.ActivityHeader;
+
             for (int i = 0; i < rawActivity.Distance.Size; i++)
             {
                 TrackingPoint trackingPoint = new TrackingPoint();
+                trackingPoint.Distance = ((JsonElement)rawActivity.Distance.Data[i]).GetDouble();
                 if (rawActivity.Time is not null)
                     trackingPoint.Time = ((JsonElement)rawActivity.Time.Data[i]).GetInt32();
                 if (rawActivity.HeartRate is not null)
                     trackingPoint.HeartRate = ((JsonElement)rawActivity.HeartRate.Data[i]).GetDouble();
-                if (rawActivity.Velocity is not null)
-                    trackingPoint.Velocity = ((JsonElement)rawActivity.Velocity.Data[i]).GetDouble() * 3.6;
                 if (rawActivity.Grade is not null)
                     trackingPoint.Grade = ((JsonElement)rawActivity.Grade.Data[i]).GetDouble();
                 if (rawActivity.Moving is not null)
@@ -48,8 +50,38 @@ namespace StravaStats.BusinessObjects
                     if (obj[1] is JsonElement lon)
                         trackingPoint.Longitude = lon.GetDouble();
                 }
+                if(rawActivity.Velocity is not null && rawActivity.Time is not null)
+                {
+                    if (i > 0)
+                    {
+                        var beforeTrackingPoint = TrackingPoints[^1];
+                        double deltaTime = trackingPoint.Time - beforeTrackingPoint.Time;
+                        if(deltaTime > 0)
+                        {
+                            double deltaDistance = trackingPoint.Distance - beforeTrackingPoint.Distance;
+                            trackingPoint.Velocity = deltaDistance / deltaTime;
 
-                trackingPoint.Distance = ((JsonElement)rawActivity.Distance.Data[i]).GetDouble();
+                            double deltaVelocity = trackingPoint.Velocity - beforeTrackingPoint.Velocity;
+                            trackingPoint.Acceleration = deltaVelocity / deltaTime;
+                        }
+                        else
+                        {
+                            // just use last known values
+                            trackingPoint.Velocity = beforeTrackingPoint.Velocity;
+                            trackingPoint.Acceleration = 0; // 0 makes more sense for constant velocity
+                        }
+                    }
+                    else
+                    {
+                        trackingPoint.Velocity = 0;
+                        trackingPoint.Acceleration = 0;
+                    }
+                }
+                else
+                {
+                    trackingPoint.Velocity = 0;
+                    trackingPoint.Acceleration = 0;
+                }
 
                 TrackingPoints.Add(trackingPoint);
             }
@@ -59,7 +91,7 @@ namespace StravaStats.BusinessObjects
         {
             var configuration = AppData.GetService<IConfiguration>();
             string cacheDir = Path.Combine(activitiesPath, AppData.ActivitiesValhallaFileLocation);
-            string cacheFilePath = Path.Combine(cacheDir, $"{Id}.json");
+            string cacheFilePath = Path.Combine(cacheDir, $"{ActivityHeader.Id}.json");
 
             if (File.Exists(cacheFilePath))
             {
@@ -131,63 +163,6 @@ namespace StravaStats.BusinessObjects
                 TrackingPoints[i].Longitude = ValhallaResponse.MatchedPoints[i].Lon;
             }
             Graph = new Graph([this]);
-        }
-
-        private List<TrackingPoint> DouglasPeucker(List<TrackingPoint> points, double tolerance)
-        {
-            if (points.Count < 3)
-                return points;
-            var start = points[0];
-            var end = points[^1];
-            double maxPerpendicularDistance = 0;
-            int index = 0;
-            for (int i = 1; i < points.Count - 1; i++)
-            {
-                double perpendicularDistance = PerpendicularDistance(points[i], start, end);
-                if (perpendicularDistance > maxPerpendicularDistance)
-                {
-                    maxPerpendicularDistance = perpendicularDistance;
-                    index = i;
-                }
-            }
-            if (maxPerpendicularDistance > tolerance)
-            {
-                var left = DouglasPeucker(points.GetRange(0, index + 1), tolerance);
-                var right = DouglasPeucker(points.GetRange(index, points.Count - index), tolerance);
-                return left.Take(left.Count - 1).Concat(right).ToList();
-            }
-            /*else if (Distance(start, end) > 1)
-            {
-                // Force a split right down the middle index of the array to break up the straight line evenly
-                int midIndex = points.Count / 2;
-
-                var left = DouglasPeucker(points.GetRange(0, midIndex + 1), tolerance);
-                var right = DouglasPeucker(points.GetRange(midIndex, points.Count - midIndex), tolerance);
-                return left.Take(left.Count - 1).Concat(right).ToList();
-            }*/
-            else
-            {
-                return new List<TrackingPoint> { start, end };
-            }
-        }
-
-        private double PerpendicularDistance(TrackingPoint point, TrackingPoint lineStart, TrackingPoint lineEnd)
-        {
-            double dx = lineEnd.Longitude - lineStart.Longitude;
-            double dy = lineEnd.Latitude - lineStart.Latitude;
-            if (dx == 0 && dy == 0)
-                return Math.Sqrt(Math.Pow(point.Longitude - lineStart.Longitude, 2) + Math.Pow(point.Latitude - lineStart.Latitude, 2));
-            double t = ((point.Longitude - lineStart.Longitude) * dx + (point.Latitude - lineStart.Latitude) * dy) / (dx * dx + dy * dy);
-            if (t < 0)
-                return Math.Sqrt(Math.Pow(point.Longitude - lineStart.Longitude, 2) + Math.Pow(point.Latitude - lineStart.Latitude, 2));
-            else if (t > 1)
-                return Math.Sqrt(Math.Pow(point.Longitude - lineEnd.Longitude, 2) + Math.Pow(point.Latitude - lineEnd.Latitude, 2));
-            else
-            {
-                double projX = lineStart.Longitude + t * dx;
-                double projY = lineStart.Latitude + t * dy;
-                return Math.Sqrt(Math.Pow(point.Longitude - projX, 2) + Math.Pow(point.Latitude - projY, 2));
-            }
         }
     }
 }

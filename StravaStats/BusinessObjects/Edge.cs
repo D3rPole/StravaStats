@@ -1,13 +1,20 @@
-﻿using NetTopologySuite.Geometries;
-using StravaStats.Helper;
+﻿using StravaStats.Helper;
 using System.Text.Json.Serialization;
+using YamlDotNet.Core.Tokens;
 
 namespace StravaStats.BusinessObjects
 {
     public class MetricSummary
     {
         [JsonIgnore]
+        public double MaxValue => maxValue == double.MinValue ? 0 : maxValue;
+
+        [JsonIgnore]
         public double Average => count == 0 ? 0 : totalValue / count;
+
+        [JsonInclude]
+        private double maxValue = double.MinValue;
+
         [JsonInclude]
         private double totalValue { get; set; }
         [JsonInclude]
@@ -17,6 +24,9 @@ namespace StravaStats.BusinessObjects
             if (value is null) return;
             count++;
             totalValue += value.Value;
+            if (maxValue < value.Value)
+                maxValue = value.Value;
+
         }
 
         public void AddMetric(MetricSummary metric)
@@ -24,6 +34,34 @@ namespace StravaStats.BusinessObjects
             if (metric is null) return;
             count += metric.count;
             totalValue += metric.totalValue;
+            if (maxValue < metric.maxValue)
+                maxValue = metric.maxValue;
+        }
+    }
+    public class Metrics
+    {
+        public MetricSummary HeartRate { get; set; } = new();
+        public MetricSummary Speed { get; set; } = new();
+        public MetricSummary Grade { get; set; } = new();
+        public MetricSummary Wattage { get; set; } = new();
+        public MetricSummary Acceleration { get; set; } = new();
+
+        public void AddDataPoint(TrackingPoint trackingPoint)
+        {
+            HeartRate.AddMetric(trackingPoint.HeartRate);
+            Speed.AddMetric(trackingPoint.SpeedKmh);
+            Grade.AddMetric(trackingPoint.Grade);
+            Wattage.AddMetric(trackingPoint.Watt);
+            Acceleration.AddMetric(trackingPoint.Acceleration);
+        }
+
+        public void AddEdge(Edge edge)
+        {
+            HeartRate.AddMetric(edge.Metrics.HeartRate);
+            Speed.AddMetric(edge.Metrics.Speed);
+            Grade.AddMetric(edge.Metrics.Grade);
+            Wattage.AddMetric(edge.Metrics.Wattage);
+            Acceleration.AddMetric(edge.Metrics.Acceleration);
         }
     }
     public class Edge
@@ -34,29 +72,17 @@ namespace StravaStats.BusinessObjects
         public double Length { get; set; }
         public HashSet<string> ActivityFileNames { get; set; } = new();
 
-        public MetricSummary HeartRate { get; set; } = new();
-        public MetricSummary Velocity { get; set; } = new();
-        public MetricSummary Grade { get; set; } = new();
-        public MetricSummary Wattage { get; set; } = new();
-        public MetricSummary Acceleration { get; set; } = new();
+        public Metrics Metrics { get; set; } = new();
 
         public void AddDataPoint(TrackingPoint trackingPoint)
         {
-            HeartRate.AddMetric(trackingPoint.HeartRate);
-            Velocity.AddMetric(trackingPoint.Velocity);
-            Grade.AddMetric(trackingPoint.Grade);
-            Wattage.AddMetric(trackingPoint.Watt);
-            Acceleration.AddMetric(trackingPoint.Acceleration);
+            Metrics.AddDataPoint(trackingPoint);
         }
 
         public void AddEdge(Edge edge)
         {
             ActivityFileNames.UnionWith(edge.ActivityFileNames);
-            HeartRate.AddMetric(edge.HeartRate);
-            Velocity.AddMetric(edge.Velocity);
-            Grade.AddMetric(edge.Grade);
-            Wattage.AddMetric(edge.Wattage);
-            Acceleration.AddMetric(edge.Acceleration);
+            Metrics.AddEdge(edge);
         }
 
         public double DistanceToPoint(Node node, Dictionary<string, Node> nodes)

@@ -4,7 +4,8 @@
     {
         public int Time { get; set; }
         public double? HeartRate { get; set; }
-        public double? Velocity { get; set; }
+        public double Velocity { get; set; }
+        public double SpeedKmh => Velocity * 3.6;
         public double? Grade { get; set; }
         public double? Watt { get; set; }
         public double? Acceleration { get; set; }

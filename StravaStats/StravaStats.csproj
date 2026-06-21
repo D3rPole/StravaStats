@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="MudBlazor" Version="9.5.0" />
+    <PackageReference Include="MudBlazor.Extensions" Version="9.5.0" />
     <PackageReference Include="OpenLayers.Blazor" Version="2.5.0" />
     <PackageReference Include="pocketken.H3" Version="4.0.0" />
     <PackageReference Include="Polyliner.Net" Version="1.0.2" />
