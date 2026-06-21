@@ -2,8 +2,8 @@
 @using Nextended.Core.Contracts
 @using Nextended.Core.Types
 @using OpenLayers.Blazor
+@using StravaStats.Helper;
 @using Services
-@using MudBlazor.Extensions.Helper
 @using BusinessObjects
 @using Enums
 @inject AccountService accountService
@@ -26,10 +26,10 @@
                                   SizeRange="@_sizeRange"
                                   Value="dateRange"
                                   ValueChanged="OnRangeChanged"
-                                  AllowWholeRangeDrag="true" 
-                                  Class="ma-2"/>
+                                  AllowWholeRangeDrag="true"
+                                  Class="ma-2" />
         </div>
-        <MudDivider/>
+        <MudDivider />
         <div class="d-flex">
             <MudSelect Label="Account" T="Account" ValueChanged="SelectedAccountChanged" Class="pa-2">
                 @foreach (var account in accountService.Accounts)
@@ -53,23 +53,22 @@
                 <MudSelectItem Value="@("""https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg""")">Satelite</MudSelectItem>
             </MudSelect>
         </div>
-        @if (displayedGraph is not null && displayedGraph.Edges.Count() > 0)
-        {
-            <MudCard>
-                <MudText Typo="Typo.h5">Stats</MudText>
-                <MudText Typo="Typo.body1">Max Velocity: @($"{displayedGraph.Metrics.Speed.MaxValue:F2}") Km/h</MudText>
-                <MudText Typo="Typo.body1">Max Acceleration: @($"{displayedGraph.Metrics.Acceleration.MaxValue:F2}") m/s²</MudText>
-                <MudText Typo="Typo.body1">Max Wattage: @($"{displayedGraph.Metrics.Wattage.MaxValue:F2}") W</MudText>
-                <MudText Typo="Typo.body1">Max Heartrate: @($"{displayedGraph.Metrics.HeartRate.MaxValue:F2}") BPM</MudText>
-                <MudText Typo="Typo.body1">Max Grade: @($"{displayedGraph.Metrics.Grade.MaxValue:F2}") %</MudText>
-            </MudCard>
-        }
     </MudCard>
 
+    @if (displayedGraph is not null && displayedGraph.Edges.Count() > 0)
+    {
+        <MudCard Class="stats-card">
+            <MudText Typo="Typo.h5">Stats</MudText>
+            <MudText Typo="Typo.body1">Max Velocity: @($"{displayedGraph.Metrics.Speed.MaxValue:F2}") Km/h</MudText>
+            <MudText Typo="Typo.body1">Max Acceleration: @($"{displayedGraph.Metrics.Acceleration.MaxValue:F2}") m/s²</MudText>
+            <MudText Typo="Typo.body1">Max Wattage: @($"{displayedGraph.Metrics.Wattage.MaxValue:F2}") W</MudText>
+            <MudText Typo="Typo.body1">Max Heartrate: @($"{displayedGraph.Metrics.HeartRate.MaxValue:F2}") BPM</MudText>
+            <MudText Typo="Typo.body1">Max Grade: @($"{displayedGraph.Metrics.Grade.MaxValue:F2}") %</MudText>
+        </MudCard>
+    }
     <div id="Map">
         <Map ConfigureJsMethod="myMapConfig"
              Style="border:0px;height: 500px; width: 100%;"
-             ZoomChanged="OnZoomChanged"
              OnClick="OnClick"
              InitialZoom="8"
              InitialCenter="new Coordinate(7.71667, 52.28333)"
@@ -112,12 +111,12 @@
                                 @foreach (var quadTree in quadTrees)
                                 {
                                     <Polygon Points="@([
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ])"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ])"
                                              Fill="#0000"
                                              Stroke="#0001"
                                              StrokeThickness="2" />
@@ -132,52 +131,7 @@
 </div>
 
 @code {
-    private MudExDateRangeSlider? _slider;
-    private DateRangeSliderMode _mode = DateRangeSliderMode.Day;
-    private bool _zoom = true;
-    private static readonly DateOnly Today = DateOnly.FromDateTime(DateTime.Today);
-    private IRange<DateOnly> _sizeRange = new RangeOf<DateOnly>(Today.AddYears(-2), Today.AddYears(2), null);
-    private DateTime Start
-    {
-        get => field; set
-        {
-            field = value;
-            manualRangeChange = true;
-            dateRange = new RangeOf<DateOnly>(DateOnly.FromDateTime(value), dateRange.End, null);
-        }
-    }
-    private DateTime End
-    {
-        get => field; set
-        {
-            field = value;
-            manualRangeChange = true;
-            dateRange = new RangeOf<DateOnly>(dateRange.Start, DateOnly.FromDateTime(value), null);
-        }
-    }
-    private bool manualRangeChange;
-    private bool uiStartChange;
-    private bool uiEndChange;
-
-    private IRange<DateOnly> dateRange
-    {
-        get => field; set
-        {
-            field = value;
-            if (dateRange is null)
-                return;
-            if (manualRangeChange)
-            {
-                manualRangeChange = false;
-                return;
-            }
-            uiStartChange = true;
-            uiEndChange = true;
-            Start = field.Start.ToDateTime(TimeOnly.MinValue);
-            End = field.End.ToDateTime(TimeOnly.MinValue);
-        }
-    }
-
+    Action UpdateGraphAction;
     private bool isLoading;
     Graph displayedGraph;
     Map map;
@@ -201,20 +155,61 @@
     public string popupContent;
     public Coordinate? popupCoordinate;
 
+    #region DateRange
+
+    private MudExDateRangeSlider? _slider;
+    private DateRangeSliderMode _mode = DateRangeSliderMode.Day;
+    private bool _zoom = true;
+    private static readonly DateOnly Today = DateOnly.FromDateTime(DateTime.Today);
+    private IRange<DateOnly> _sizeRange = new RangeOf<DateOnly>(Today.AddYears(-2), Today.AddYears(2), null);
+    private DateTime Start
+    {
+        get => field; set
+        {
+            if (value > End)
+                field = End;
+            else
+                field = value;
+            manualRangeChange = true;
+            dateRange = new RangeOf<DateOnly>(DateOnly.FromDateTime(field), dateRange.End, null);
+        }
+    }
+    private DateTime End
+    {
+        get => field; set
+        {
+            if (value < Start)
+                field = Start;
+            else
+                field = value;
+            manualRangeChange = true;
+            dateRange = new RangeOf<DateOnly>(dateRange.Start, DateOnly.FromDateTime(field), null);
+        }
+    }
+    private bool manualRangeChange;
+    private IRange<DateOnly> dateRange
+    {
+        get => field; set
+        {
+            field = value;
+            if (dateRange is null)
+                return;
+            if (manualRangeChange)
+            {
+                manualRangeChange = false;
+                return;
+            }
+            Start = field.Start.ToDateTime(TimeOnly.MinValue);
+            End = field.End.ToDateTime(TimeOnly.MinValue);
+        }
+    }
 
     private void OnRangeChanged(IRange<DateOnly> newValue)
     {
         dateRange = newValue;
 
-        if (dateRange is null)
-        {
-            ResetClicked();
-            return;
-        }
-
         if (selectedAccount is null)
             return;
-        selectedAccount.SelectRange(Start, End);
         UpdateDisplayedGraph();
     }
 
@@ -223,6 +218,10 @@
         if (value is null)
             return;
         Start = value.Value;
+
+        if (selectedAccount is null)
+            return;
+        UpdateDisplayedGraph();
     }
 
     private void OnEndDateChanged(DateTime? value)
@@ -230,6 +229,10 @@
         if (value is null)
             return;
         End = value.Value;
+
+        if (selectedAccount is null)
+            return;
+        UpdateDisplayedGraph();
     }
 
     private void ResetClicked()
@@ -242,6 +245,10 @@
         _sizeRange = dateRange;
         UpdateDisplayedGraph();
     }
+
+    #endregion
+
+    #region Selections
 
     private async Task SelectedMetricChanged(Metric metric)
     {
@@ -266,6 +273,11 @@
         End = selectedAccount.EndDateRange;
         _sizeRange = dateRange;
     }
+
+    #endregion
+
+
+    #region Graph
 
     private void OnClick(Coordinate coordinate)
     {
@@ -304,15 +316,7 @@
 
     private async void UpdateDisplayedGraph()
     {
-        if (selectedAccount is null)
-            return;
-
-        await SetGraph(selectedAccount.Selection);
-    }
-
-    private async void OnZoomChanged(double zoomLevel)
-    {
-        UpdateDisplayedGraph();
+        UpdateGraphAction.Invoke();
     }
 
     private async Task SetGraph(Graph graph)
@@ -324,22 +328,6 @@
 
         displayedGraph = graph;
         await RenderEdgesViaJS(displayedGraph);
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        dateRange = new RangeOf<DateOnly>(Today.AddMonths(-3), Today.AddMonths(3), null);
-        await base.OnInitializedAsync();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await base.OnAfterRenderAsync(firstRender);
-        if (firstRender)
-        {
-            mapLink = "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png";
-            await InitializeJS();
-        }
     }
 
     private async Task RenderEdgesViaJS(Graph targetGraph)
@@ -401,8 +389,12 @@
             flatCoordinates[i * 4 + 3] = edge.end[1];
         }
 
-        JS.InvokeVoidAsync("setEdges", flatCoordinates, colors);
+        await JS.InvokeVoidAsync("setEdges", flatCoordinates, colors);
     }
+
+    #endregion
+
+    #region Map
 
     [JSInvokable]
     public void MapInitialized()
@@ -417,9 +409,37 @@
         this.isLoading = isLoading;
     }
 
+    #endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        dateRange = new RangeOf<DateOnly>(Today.AddMonths(-3), Today.AddMonths(3), null);
+
+        UpdateGraphAction = new Action(async () =>
+        {
+            if (selectedAccount is null)
+                return;
+            selectedAccount.SelectRange(Start, End);
+            await SetGraph(selectedAccount.Selection);
+        }).Debounce(TimeSpan.FromMilliseconds(200));
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            mapLink = "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png";
+            await InitializeJS();
+        }
+    }
+
     private async Task InitializeJS()
     {
         var objRef = DotNetObjectReference.Create(this);
         await JS.InvokeVoidAsync("registerBlazorComponent", objRef);
     }
+
 }

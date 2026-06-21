@@ -60,6 +60,12 @@ namespace StravaStats.BusinessObjects
         [JsonIgnore]
         public DateTime EndDateRange { get; set; }
 
+        [JsonIgnore]
+        public DateTime SelectedStart { get; set; }
+
+        [JsonIgnore]
+        public DateTime SelectedEnd { get; set; }
+
         public async Task BuildGraphs()
         {
             long ticks = DateTime.Now.Ticks;
@@ -74,10 +80,16 @@ namespace StravaStats.BusinessObjects
         public void ResetSelection()
         {
             Selection = FullGraph;
+            SelectedStart = StartDateRange;
+            SelectedEnd = EndDateRange;
         }
 
         public void SelectRange(DateTime from, DateTime to)
         {
+            if (from == SelectedStart && to == SelectedEnd)
+                return;
+            SelectedStart = from;
+            SelectedEnd = to;
             var selection = Activities.Where(a =>
                 a.ActivityHeader.StartDate is not null &&
                 a.ActivityHeader.StartDate >= from &&
