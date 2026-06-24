@@ -28,28 +28,21 @@ namespace StravaStats.BusinessObjects
                 EndDateRange = StartDateRange;
                 foreach (var activity in field)
                 {
-                    if(activity.ActivityHeader.StartDate is not null && activity.ActivityHeader.StartDate.Value < StartDateRange)
+                    if (activity.ActivityHeader.StartDate is not null && activity.ActivityHeader.StartDate.Value < StartDateRange)
                         StartDateRange = activity.ActivityHeader.StartDate.Value;
-                    if(activity.ActivityHeader.StartDate is not null && activity.ActivityHeader.StartDate.Value > EndDateRange)
+                    if (activity.ActivityHeader.StartDate is not null && activity.ActivityHeader.StartDate.Value > EndDateRange)
                         EndDateRange = activity.ActivityHeader.StartDate.Value;
                 }
             }
         }
+        [JsonIgnore]
+        public List<Activity> SelectedActivities { get; set; }
 
         [JsonIgnore]
         public Graph FullGraph { get; set; }
 
         [JsonIgnore]
-        public Graph Selection { get; set; }
-
-        [JsonIgnore]
-        public Graph LOD1Graph { get; set; }
-
-        [JsonIgnore]
-        public Graph LOD2Graph { get; set; }
-
-        [JsonIgnore]
-        public Graph LOD3Graph { get; set; }
+        public Graph SelectedGraph { get; set; }
 
         [JsonIgnore]
         public string AccountDirectory { get; set; }
@@ -71,7 +64,7 @@ namespace StravaStats.BusinessObjects
             long ticks = DateTime.Now.Ticks;
 
             FullGraph = new(Activities.Select(a => a.Graph).ToList());
-            Selection = FullGraph;
+            SelectedGraph = FullGraph;
 
             double ms = (double)(DateTime.Now.Ticks - ticks) / TimeSpan.TicksPerMillisecond;
             Console.WriteLine(Name + $": {ms:F2} ms");
@@ -79,7 +72,8 @@ namespace StravaStats.BusinessObjects
 
         public void ResetSelection()
         {
-            Selection = FullGraph;
+            SelectedGraph = FullGraph;
+            SelectedActivities = Activities;
             SelectedStart = StartDateRange;
             SelectedEnd = EndDateRange;
         }
@@ -90,11 +84,12 @@ namespace StravaStats.BusinessObjects
                 return;
             SelectedStart = from;
             SelectedEnd = to;
-            var selection = Activities.Where(a =>
+            SelectedActivities = Activities.Where(a =>
                 a.ActivityHeader.StartDate is not null &&
                 a.ActivityHeader.StartDate >= from &&
-                a.ActivityHeader.StartDate <= to).Select(a => a.Graph).ToList();
-            Selection = new(selection);
+                a.ActivityHeader.StartDate <= to).ToList();
+
+            SelectedGraph = new(SelectedActivities.Select(a => a.Graph).ToList());
         }
     }
 

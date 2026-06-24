@@ -50,19 +50,28 @@ namespace StravaStats.BusinessObjects
                     if (obj[1] is JsonElement lon)
                         trackingPoint.Longitude = lon.GetDouble();
                 }
-                if(rawActivity.Velocity is not null && rawActivity.Time is not null)
+                if (rawActivity.Velocity is not null && rawActivity.Time is not null)
                 {
                     if (i > 0)
                     {
                         var beforeTrackingPoint = TrackingPoints[^1];
                         double deltaTime = trackingPoint.Time - beforeTrackingPoint.Time;
-                        if(deltaTime > 0)
+                        if (deltaTime > 0)
                         {
                             double deltaDistance = trackingPoint.Distance - beforeTrackingPoint.Distance;
-                            trackingPoint.Velocity = deltaDistance / deltaTime;
+                            if (deltaDistance > 20)
+                            {
+                                // incase distance is unreasnoble long (maybe gps glitch?), assume last known speed
+                                trackingPoint.Velocity = beforeTrackingPoint.Velocity;
+                                trackingPoint.Acceleration = 0;
+                            }
+                            else
+                            {
+                                trackingPoint.Velocity = deltaDistance / deltaTime;
 
-                            double deltaVelocity = trackingPoint.Velocity - beforeTrackingPoint.Velocity;
-                            trackingPoint.Acceleration = deltaVelocity / deltaTime;
+                                double deltaVelocity = trackingPoint.Velocity - beforeTrackingPoint.Velocity;
+                                trackingPoint.Acceleration = deltaVelocity / deltaTime;
+                            }
                         }
                         else
                         {
@@ -80,6 +89,12 @@ namespace StravaStats.BusinessObjects
                 else
                 {
                     trackingPoint.Velocity = 0;
+                    trackingPoint.Acceleration = 0;
+                }
+
+                if(trackingPoint.Acceleration > 3 || trackingPoint.Acceleration < -3)
+                {
+                    // some sort of unrealistic velocity jump must have happened, we are biking here...
                     trackingPoint.Acceleration = 0;
                 }
 

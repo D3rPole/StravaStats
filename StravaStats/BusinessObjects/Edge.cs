@@ -1,6 +1,5 @@
 ﻿using StravaStats.Helper;
 using System.Text.Json.Serialization;
-using YamlDotNet.Core.Tokens;
 
 namespace StravaStats.BusinessObjects
 {
@@ -26,7 +25,6 @@ namespace StravaStats.BusinessObjects
             totalValue += value.Value;
             if (maxValue < value.Value)
                 maxValue = value.Value;
-
         }
 
         public void AddMetric(MetricSummary metric)
@@ -70,7 +68,7 @@ namespace StravaStats.BusinessObjects
         public string EndNodeKey { get; set; }
         public long WayId { get; set; }
         public double Length { get; set; }
-        public HashSet<string> ActivityFileNames { get; set; } = new();
+        public HashSet<string> ActivityIds { get; set; } = new();
 
         public Metrics Metrics { get; set; } = new();
 
@@ -81,7 +79,7 @@ namespace StravaStats.BusinessObjects
 
         public void AddEdge(Edge edge)
         {
-            ActivityFileNames.UnionWith(edge.ActivityFileNames);
+            ActivityIds.UnionWith(edge.ActivityIds);
             Metrics.AddEdge(edge);
         }
 

@@ -9,6 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Components\Pages\Home.razor.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Components\Pages\Home.razor.css" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MudBlazor" Version="9.5.0" />
     <PackageReference Include="MudBlazor.Extensions" Version="9.5.0" />
     <PackageReference Include="OpenLayers.Blazor" Version="2.5.0" />
