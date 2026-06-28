@@ -58,3 +58,9 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+.mud-table-row .mud-table-cell {
+    padding: 8px !important;
+    padding-inline-start: 8px !important;
+    padding-inline-end: 8px !important;
+}

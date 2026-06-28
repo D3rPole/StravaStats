@@ -120,7 +120,7 @@ public struct EdgeKey : IEquatable<EdgeKey>
 public class Edge
 {
     public EdgeKey EdgeKey { get; set; }
-    public HashSet<string> ActivityIds { get; set; } = new();
+    public HashSet<long> ActivityIds { get; set; } = new();
     public Metrics Metrics { get; set; } = new();
 
     public void AddDataPoint(TrackingPoint trackingPoint)

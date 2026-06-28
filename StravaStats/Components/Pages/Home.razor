@@ -13,14 +13,23 @@
 <div>
     <MudCard Class="ma-2">
         <div class="d-flex">
-            <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Primary" OnClick="ResetClicked" Class="ma-2">Reset</MudButton>
+            <MudButton Disabled="@(selectedAccount is null)"
+                       Variant="Variant.Filled"
+                       Color="MudBlazor.Color.Primary"
+                       OnClick="ResetClicked"
+                       Class="ma-2">
+                Reset
+            </MudButton>
             <MudDatePicker Date="Start"
+                           Disabled="@(selectedAccount is null)"
                            DateChanged="OnStartDateChanged"
                            Class="ma-2" />
             <MudDatePicker Date="End"
+                           Disabled="@(selectedAccount is null)"
                            DateChanged="OnEndDateChanged"
                            Class="ma-2" />
             <MudExDateRangeSlider @ref="_slider"
+                                  Disabled="@(selectedAccount is null)"
                                   Mode="_mode"
                                   EnableMouseWheelZoom="_zoom"
                                   SizeRange="@_sizeRange"
@@ -38,7 +47,11 @@
                 }
             </MudSelect>
 
-            <MudSelect Label="Metric" T="Metric" ValueChanged="SelectedMetricChanged" Class="pa-2">
+            <MudSelect Disabled="@(selectedAccount is null)"
+                       Label="Metric"
+                       T="Metric"
+                       ValueChanged="SelectedMetricChanged"
+                       Class="pa-2">
                 <MudSelectItem Value="Metric.Count" />
                 <MudSelectItem Value="Metric.HeartRate" />
                 <MudSelectItem Value="Metric.Velocity" />
@@ -56,18 +69,18 @@
     </MudCard>
     <div class="d-inline-flex" style="width:100%;">
         <div class="my-map-container flex-grow-1">
-            @if (displayedGraph is not null && displayedGraph.Edges.Count() > 0)
+            @if (isLoading)
             {
-                @if (isLoading)
-                {
-                    <div class="map-loading"></div>
-                }
-                <MudCard Class="stats-overlay">
-                    <MudButton OnClick="StatsExpand" Class="d-flex">
-                        <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.h6">Stats</MudText>
-                        <MudIcon Icon="@(statsExpanded ? Icons.Material.Filled.ArrowDropUp : Icons.Material.Filled.ArrowDropDown)" />
-                    </MudButton>
-                    <MudCollapse Expanded="statsExpanded">
+                <div class="map-loading"></div>
+            }
+            <MudCard Class="@("stats-overlay" + (statsExpanded ? " enabled" : ""))">
+                <MudButton OnClick="StatsExpand" Class="d-flex" Disabled="@(displayedGraph is null || displayedGraph.Edges.Count() == 0)">
+                    <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.h6">Stats</MudText>
+                    <MudIcon Icon="@(statsExpanded ? Icons.Material.Filled.ArrowDropUp : Icons.Material.Filled.ArrowDropDown)" />
+                </MudButton>
+                <MudCollapse Expanded="@(statsExpanded)">
+                    @if (displayedGraph is not null && displayedGraph.Edges.Count() > 0)
+                    {
                         <MudDivider Class="ma-2" />
                         <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.body2">Maximums</MudText>
                         <MudDivider Class="ma-2" />
@@ -84,9 +97,10 @@
                         <MudText Typo="Typo.body1">Average Wattage: @($"{displayedGraph.Metrics.Wattage.Average:F2}") W</MudText>
                         <MudText Typo="Typo.body1">Average Heartrate: @($"{displayedGraph.Metrics.HeartRate.Average:F2}") BPM</MudText>
                         <MudText Typo="Typo.body1">Average Grade: @($"{displayedGraph.Metrics.Grade.Average:F2}") %</MudText>
-                    </MudCollapse>
-                </MudCard>
-            }
+                    }
+                </MudCollapse>
+            </MudCard>
+
             <div id="map">
                 <Map ConfigureJsMethod="myMapConfig"
                      OnClick="OnClick"
@@ -120,12 +134,12 @@
                                         @foreach (var quadTree in quadTrees)
                                         {
                                             <Polygon Points="@([
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1),
-                                                                                                                                                                                                                                                                                                                               new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y1),
-                                                                                                                                                                                                                                                                                                                                        new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y2),
-                                                                                                                                                                                                                                                                                                                                        new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y2),
-                                                                                                                                                                                                                                                                                                                                        new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ])"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             new(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1),
+                                                                                                                                                                                                                                                                                                                                                                                     new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y1),
+                                                                                                                                                                                                                                                                                                                                                                                              new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y2),
+                                                                                                                                                                                                                                                                                                                                                                                              new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y2),
+                                                                                                                                                                                                                                                                                                                                                                                              new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ])"
                                                      Fill="#0000"
                                                      Stroke="#0001"
                                                      StrokeThickness="2" />
@@ -138,28 +152,44 @@
                 </Map>
             </div>
         </div>
-        <div class="activities-list">
-            @if (selectedAccount is not null && selectedAccount.SelectedActivities is not null)
-            {
-                <MudList T="Activity" SelectionMode="@SelectionMode.MultiSelection" @bind-SelectedValues="SelectedActivities">
-                    @foreach (var activity in selectedAccount.SelectedActivities)
-                    {
-                        <MudListItem Value="activity">
-                            <div class="d-inline-flex" style="width:100%;">
-                                <MudText Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Class="flex-grow-1" Typo="Typo.body1">@activity.ActivityHeader.Name</MudText>
-                                <MudText Style="text-wrap: nowrap" Typo="Typo.body1">@($"{(activity.ActivityHeader.Distance / 1000):F2} Km")</MudText>
-                                <MudText Class="ml-4" Style="text-wrap: nowrap" Typo="Typo.body1">@($"{activity.ActivityHeader.StartDate:dd.MM.yyyy}")</MudText>
-                            </div>
-                        </MudListItem>
-                    }
-                </MudList>
-            }
-        </div>
+        @if (selectedAccount is not null && selectedAccount.SelectedActivities is not null)
+        {
+            <div class="activities-list">
+                <MudDataGrid Dense="true" T="Activity" MultiSelection="true" Items="selectedAccount.SelectedActivities" @bind-SelectedItems="SelectedActivities">
+                    <Columns>
+                        <SelectColumn T="Activity" />
+                        <TemplateColumn Title="Name" Sortable="true" SortBy="x => x.ActivityHeader.Name">
+                            <CellTemplate>
+                                <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.ActivityHeader.Name</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Distance" Sortable="true" SortBy="x => x.ActivityHeader.Distance">
+                            <CellTemplate>
+                                @($"{context.Item.ActivityHeader.Distance / 1000.0:F2} Km")
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Popup" Sortable="true" SortBy="x => (popupActivities != null && popupActivities.Contains(x.ActivityHeader.Id)) ? 1 : 0">
+                            <CellTemplate>
+                                @if (popupActivities is not null && popupActivities.Contains(context.Item.ActivityHeader.Id))
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="MudBlazor.Color.Primary" />
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Date" Sortable="true" SortBy="x => x.ActivityHeader.StartDate">
+                            <CellTemplate>
+                                <MudText Style="text-wrap: nowrap" Typo="Typo.body1">@($"{context.Item.ActivityHeader.StartDate:dd.MM.yyyy}")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            </div>
+        }
     </div>
 </div>
 
 @code {
-    IReadOnlyCollection<Activity> SelectedActivities
+    HashSet<Activity> SelectedActivities
     {
         get => field;
         set
@@ -176,11 +206,12 @@
     Account selectedAccount;
     private Metric displayedMetric;
     private Guid markerKey = Guid.NewGuid();
-    bool statsExpanded;
+    bool _statsExpanded;
+    bool statsExpanded => _statsExpanded && displayedGraph is not null && displayedGraph.Edges.Count() > 0;
 
     public void StatsExpand()
     {
-        statsExpanded = !statsExpanded;
+        _statsExpanded = !_statsExpanded;
     }
 
     public string mapLink
@@ -197,6 +228,7 @@
     }
 
     public string popupContent;
+    HashSet<long>? popupActivities;
     public OpenLayers.Blazor.Coordinate? popupCoordinate;
 
     #region DateRange
@@ -357,6 +389,8 @@
                         $"Max Acceleration: {edge.Metrics.Acceleration.MaxValue:F2} m/s²\n" +
                         $"Average Wattage: {edge.Metrics.Wattage.Average:F2} W\n";
 
+        popupActivities = edge.ActivityIds;
+
         StateHasChanged();
     }
 
@@ -382,7 +416,7 @@
                     .Select(e =>
                     {
                         BusinessObjects.Color color = new();
-                        if (e.ActivityIds.Any(id => SelectedActivities.Any(a => a.ActivityHeader.Id.ToString() == id)))
+                        if (e.ActivityIds.Any(id => SelectedActivities.Any(a => a.ActivityHeader.Id == id)))
                         {
                             return new
                             {
@@ -458,32 +492,26 @@
         UpdateDisplayedGraph();
     }
 
-    [JSInvokable]
-    public async void SetLoadingState(bool isLoading)
-    {
-        if (!isLoading)
-            this.isLoading = false;
-        await InvokeAsync(StateHasChanged);
-    }
-
     #endregion
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         dateRange = new RangeOf<DateOnly>(Today.AddMonths(-3), Today.AddMonths(3), null);
 
-        UpdateGraphAction = new Action(async () =>
+        UpdateGraphAction = new Func<Task>(async () =>
         {
             if (selectedAccount is null)
                 return;
+
             isLoading = true;
             await InvokeAsync(StateHasChanged);
+            await JS.InvokeVoidAsync("clearMap");
             selectedAccount.SelectRange(Start, End);
             await SetGraph(selectedAccount.SelectedGraph);
+            isLoading = false;
             await InvokeAsync(StateHasChanged);
         }).Debounce(TimeSpan.FromMilliseconds(200));
-
-        await base.OnInitializedAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

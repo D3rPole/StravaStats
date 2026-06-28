@@ -9,68 +9,81 @@ window.myMapConfig = function (olMap) {
     blazorComponentRef.invokeMethodAsync('MapInitialized');
 }
 
-window.setEdges = function (flatCoords, colors) {
-    const map = window._myOLMap;
-    if (!map) { console.error("Map not ready"); return; }
-
-    // 1. CLEAR PREVIOUS EDGES IMMEDIATELY
+window.clearMap = function () {
     if (window._edgeLayer) {
         window._edgeLayer.getSource().clear(true);
     }
+}
 
-    // 3. Defer the heavy processing so the UI thread can paint the spinner
-    requestAnimationFrame(() => {
-        setTimeout(() => {
-            const colorGroups = {};
-            const totalEdges = colors.length;
+window.clearMap = function () {
+    if (window._edgeLayer) {
+        window._edgeLayer.getSource().clear(true);
+    }
+}
 
-            for (let i = 0; i < totalEdges; i++) {
-                const coordOffset = i * 4;
-                const color = colors[i] || '#ffffff';
+window.setEdges = function (flatCoords, colors) {
+    return new Promise((resolve) => {
+        const map = window._myOLMap;
+        if (!map) { resolve(); return; }
 
-                const startLon = flatCoords[coordOffset];
-                const startLat = flatCoords[coordOffset + 1];
-                const endLon = flatCoords[coordOffset + 2];
-                const endLat = flatCoords[coordOffset + 3];
-
-                if (startLon === undefined || endLon === undefined) continue;
-
-                const transformedLine = [
-                    ol.proj.fromLonLat([startLon, startLat]),
-                    ol.proj.fromLonLat([endLon, endLat])
-                ];
-
-                if (!colorGroups[color]) {
-                    colorGroups[color] = [];
-                }
-                colorGroups[color].push(transformedLine);
-            }
-
-            const features = Object.keys(colorGroups).map(color => {
-                return new ol.Feature({
-                    geometry: new ol.geom.MultiLineString(colorGroups[color]),
-                    color: color
-                });
+        if (window._edgeLayer) {
+            window._edgeLayer.getSource().clear(true);
+        } else {
+            window._edgeLayer = new ol.layer.WebGLVector({
+                source: new ol.source.Vector({ useSpatialIndex: false }),
+                disableHitDetection: true,
+                style: { 'stroke-color': ['get', 'color'], 'stroke-width': 2 }
             });
+            map.addLayer(window._edgeLayer);
+        }
 
-            if (!window._edgeLayer) {
-                window._edgeLayer = new ol.layer.WebGLVector({
-                    source: new ol.source.Vector({ useSpatialIndex: false }),
-                    disableHitDetection: true,
-                    style: {
-                        'stroke-color': ['get', 'color'],
-                        'stroke-width': 2
-                    }
-                });
-                map.addLayer(window._edgeLayer);
+        const CHUNK_SIZE = 8000;
+        const totalEdges = colors.length;
+        const colorGroups = new Map();
+        let cursor = 0;
+
+        const DEG_TO_RAD = Math.PI / 180;
+        const R = 6378137;
+
+        function lonLatToMerc(lon, lat) {
+            const x = lon * DEG_TO_RAD * R;
+            const sinLat = Math.sin(lat * DEG_TO_RAD);
+            const y = R * Math.log((1 + sinLat) / (1 - sinLat)) / 2;
+            return [x, y];
+        }
+
+        function processChunk() {
+            const end = Math.min(cursor + CHUNK_SIZE, totalEdges);
+            for (let i = cursor; i < end; i++) {
+                const o = i * 4;
+                const startLon = flatCoords[o];
+                if (startLon === undefined) continue;
+                const color = colors[i] || '#ffffff';
+                const line = [
+                    lonLatToMerc(startLon, flatCoords[o + 1]),
+                    lonLatToMerc(flatCoords[o + 2], flatCoords[o + 3])
+                ];
+                let group = colorGroups.get(color);
+                if (!group) { group = []; colorGroups.set(color, group); }
+                group.push(line);
             }
+            cursor = end;
 
-            const source = window._edgeLayer.getSource();
-            source.addFeatures(features);
-
-            if (blazorComponentRef) {
-                blazorComponentRef.invokeMethodAsync('SetLoadingState', false);
+            if (cursor < totalEdges) {
+                requestAnimationFrame(processChunk);
+            } else {
+                const features = [];
+                for (const [color, lines] of colorGroups) {
+                    features.push(new ol.Feature({
+                        geometry: new ol.geom.MultiLineString(lines),
+                        color
+                    }));
+                }
+                window._edgeLayer.getSource().addFeatures(features);
+                resolve();
             }
-        }, 0);
+        }
+
+        requestAnimationFrame(processChunk);
     });
 };

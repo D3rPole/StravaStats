@@ -101,7 +101,7 @@ namespace StravaStats.BusinessObjects
                     }
 
                     closestEdge.AddDataPoint(point);
-                    closestEdge.ActivityIds.Add(activity.ActivityHeader.Id.ToString());
+                    closestEdge.ActivityIds.Add(activity.ActivityHeader.Id);
                 }
             }
         }

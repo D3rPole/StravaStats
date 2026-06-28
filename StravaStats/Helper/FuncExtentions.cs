@@ -1,8 +1,8 @@
 ﻿namespace StravaStats.Helper;
 
-public static class ActionExtensions
+public static class FuncExtentions
 {
-    public static Action Debounce(this Action action, TimeSpan delay)
+    public static Action Debounce(this Func<Task> action, TimeSpan delay)
     {
         CancellationTokenSource? cancellationTokenSource = null;
 
@@ -13,13 +13,13 @@ public static class ActionExtensions
 
             Task
                 .Delay(delay, cancellationTokenSource.Token)
-                .ContinueWith(task =>
+                .ContinueWith(async task =>
                 {
                     if (task.IsCompletedSuccessfully)
                     {
-                        action();
+                        await action();
                     }
-                }, TaskScheduler.Default);
+                }, TaskScheduler.FromCurrentSynchronizationContext());
         };
     }
 }
