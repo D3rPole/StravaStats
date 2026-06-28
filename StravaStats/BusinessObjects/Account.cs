@@ -84,6 +84,8 @@ namespace StravaStats.BusinessObjects
         {
             if (from == SelectedStart && to == SelectedEnd)
                 return;
+            long ticks = DateTime.Now.Ticks;
+
             SelectedStart = from;
             SelectedEnd = to;
             SelectedActivities = Activities.Where(a =>
@@ -92,6 +94,9 @@ namespace StravaStats.BusinessObjects
                 a.ActivityHeader.StartDate <= to).ToList();
 
             SelectedGraph = new(SelectedActivities.Select(a => a.Graph).ToList());
+
+            double ms = (double)(DateTime.Now.Ticks - ticks) / TimeSpan.TicksPerMillisecond;
+            Console.WriteLine(Name + $": {ms:F2} ms");
         }
     }
 

@@ -4,36 +4,76 @@ using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
+    public struct BoundingBox
+    {
+        public double X1 { get; set; }
+        public double Y1 { get; set; }
+        public double X2 { get; set; }
+        public double Y2 { get; set; }
+
+        public BoundingBox() { }
+        public BoundingBox(double x1, double y1, double x2, double y2)
+        {
+            X1 = x1;
+            Y1 = y1;
+            X2 = x2;
+            Y2 = y2;
+        }
+
+        public bool ContainsNode(BusinessObjects.Node node)
+        {
+            return ContainsCoords(node.Coordinate.Latitude, node.Coordinate.Longitude);
+        }
+
+        public bool ContainsCoords(double lat, double lon)
+        {
+            return
+                lon >= X1 &&
+                lon <= X2 &&
+                lat >= Y1 &&
+                lat <= Y2;
+        }
+    }
     public class QuadTree
     {
         [JsonIgnore]
-        const int maxEdges = 80;
+        public int MaxEdges { get; private set; } = 200;
         [JsonIgnore]
-        const int maxDepth = 30;
-        
-        public Extent Extent { get; set; }
+        public int MaxDepth { get; private set; } = 30;
+
+        public BoundingBox BoundingBox { get; set; }
 
         public int CurrentDepth { get; set; } = 0;
         public QuadTree? UpperLeft { get; set; }
         public QuadTree? UpperRight { get; set; }
         public QuadTree? DownLeft { get; set; }
         public QuadTree? DownRight { get; set; }
-        public List<Edge> Edges  { get; set; } = [];
+        public List<Edge> Edges { get; set; } = [];
 
         [JsonIgnore]
         private bool isSplit => UpperLeft is not null;
 
-        public QuadTree(Extent extent, int currentDepth)
+        public QuadTree() { }
+
+        public QuadTree(BoundingBox boundingBox, int currentDepth)
         {
-            Extent = extent;
+            BoundingBox = boundingBox;
             this.CurrentDepth = currentDepth;
+        }
+
+        public QuadTree(BoundingBox boundingBox, int currentDepth, int maxEdges, int maxDepth)
+        {
+            BoundingBox = boundingBox;
+            this.CurrentDepth = currentDepth;
+            MaxEdges = maxEdges;
+            MaxDepth = maxDepth;
         }
 
         public void AddEdge(Edge edge, Dictionary<Coordinate, Node> nodes)
         {
             // Reject edges that don't touch this extent at all
-            if (!Extent.ContainsNode(nodes[edge.EdgeKey.StartNodeKey]) &&
-                !Extent.ContainsNode(nodes[edge.EdgeKey.EndNodeKey]))
+            if (!BoundingBox.ContainsNode(nodes[edge.EdgeKey.StartNodeKey]) &&
+                !BoundingBox.ContainsNode(nodes[edge.EdgeKey.EndNodeKey]))
                 return;
 
             if (isSplit)
@@ -47,20 +87,20 @@ namespace StravaStats.BusinessObjects
             {
                 Edges.Add(edge);
 
-                if (Edges.Count > maxEdges && CurrentDepth < maxDepth)
+                if (Edges.Count > MaxEdges && CurrentDepth < MaxDepth)
                     Split(nodes);
             }
         }
 
         private void Split(Dictionary<Coordinate, Node> nodes)
         {
-            double midX = (Extent.X1 + Extent.X2) / 2;
-            double midY = (Extent.Y1 + Extent.Y2) / 2;
+            double midX = (BoundingBox.X1 + BoundingBox.X2) / 2;
+            double midY = (BoundingBox.Y1 + BoundingBox.Y2) / 2;
 
-            UpperLeft = new(new Extent(Extent.X1, Extent.Y1, midX, midY), CurrentDepth + 1);
-            UpperRight = new(new Extent(midX, Extent.Y1, Extent.X2, midY), CurrentDepth + 1);
-            DownLeft = new(new Extent(Extent.X1, midY, midX, Extent.Y2), CurrentDepth + 1);
-            DownRight = new(new Extent(midX, midY, Extent.X2, Extent.Y2), CurrentDepth + 1);
+            UpperLeft = new(new BoundingBox(BoundingBox.X1, BoundingBox.Y1, midX, midY), CurrentDepth + 1, MaxEdges, MaxDepth);
+            UpperRight = new(new BoundingBox(midX, BoundingBox.Y1, BoundingBox.X2, midY), CurrentDepth + 1, MaxEdges, MaxDepth);
+            DownLeft = new(new BoundingBox(BoundingBox.X1, midY, midX, BoundingBox.Y2), CurrentDepth + 1, MaxEdges, MaxDepth);
+            DownRight = new(new BoundingBox(midX, midY, BoundingBox.X2, BoundingBox.Y2), CurrentDepth + 1, MaxEdges, MaxDepth);
 
             var edgesToReassign = Edges.ToList();
             Edges.Clear();
@@ -78,13 +118,13 @@ namespace StravaStats.BusinessObjects
         {
             if (isSplit)
             {
-                if (UpperLeft?.Extent.ContainsCoords(lat, lon) == true)
+                if (UpperLeft?.BoundingBox.ContainsCoords(lat, lon) == true)
                     return UpperLeft.GetClosestEdge(lat, lon, nodes);
-                if (UpperRight?.Extent.ContainsCoords(lat, lon) == true)
+                if (UpperRight?.BoundingBox.ContainsCoords(lat, lon) == true)
                     return UpperRight.GetClosestEdge(lat, lon, nodes);
-                if (DownLeft?.Extent.ContainsCoords(lat, lon) == true)
+                if (DownLeft?.BoundingBox.ContainsCoords(lat, lon) == true)
                     return DownLeft.GetClosestEdge(lat, lon, nodes);
-                if (DownRight?.Extent.ContainsCoords(lat, lon) == true)
+                if (DownRight?.BoundingBox.ContainsCoords(lat, lon) == true)
                     return DownRight.GetClosestEdge(lat, lon, nodes);
                 return new[] { UpperLeft, UpperRight, DownLeft, DownRight }
                     .Where(q => q is not null)
@@ -105,7 +145,7 @@ namespace StravaStats.BusinessObjects
             if (isSplit)
             {
                 var matching = new[] { UpperLeft, UpperRight, DownLeft, DownRight }
-                    .Where(q => q?.Extent.ContainsCoords(lat, lon) == true)
+                    .Where(q => q?.BoundingBox.ContainsCoords(lat, lon) == true)
                     .ToList();
 
                 var source = matching.Count > 0

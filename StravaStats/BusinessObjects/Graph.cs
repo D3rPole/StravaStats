@@ -12,13 +12,14 @@ namespace StravaStats.BusinessObjects
         public Dictionary<Coordinate, List<Coordinate>> AdjacencyList { get; set; } = [];
         [JsonConverter(typeof(CoordinateDictionaryConverter<Node>))]
         public Dictionary<Coordinate, Node> Nodes { get; set; } = [];
-        public QuadTree QuadTree { get; set; } = new(new OpenLayers.Blazor.Extent(-180, -90, 180, 90), 0);
+        public QuadTree QuadTree { get; set; }
         public Metrics Metrics { get; set; } = new();
 
-        public Graph() { }
+        public Graph() {}
 
         public Graph(List<Graph> graphs)
         {
+            QuadTree = new(new BoundingBox(-180, -90, 180, 90), 0, 200, 0);
             foreach (var graph in graphs)
             {
                 if (graph is null)
@@ -37,6 +38,7 @@ namespace StravaStats.BusinessObjects
 
         public Graph(List<Activity> activities)
         {
+            QuadTree = new(new BoundingBox(-180, -90, 180, 90), 0);
             var configiration = AppData.GetService<IConfiguration>();
             double maxNodeDistance = double.Parse(configiration["MaxNodeDistance"]);
             int e = 0;
