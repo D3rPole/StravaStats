@@ -124,7 +124,7 @@ namespace StravaStats.BusinessObjects
                         var edge = GetEdge(edgeKey);
                         if (edge is null)
                             break;
-                        way.Add((edge.StartNodeKey, edge.EndNodeKey), edge);
+                        way.Add((edge.EdgeKey.StartNodeKey, edge.EdgeKey.EndNodeKey), edge);
                         visitedEdges.Add((previousNodeKey, currentNodeKey));
                         if (AdjacencyList[currentNodeKey].Count != 2) // stop at next intersection
                             break;
@@ -149,14 +149,14 @@ namespace StravaStats.BusinessObjects
 
         public void AddNode(Node node)
         {
-            if (Nodes.ContainsKey(node.Key))
+            if (Nodes.ContainsKey(node.Coordinate))
                 return;
-            Nodes.Add(node.Key, node);
+            Nodes.Add(node.Coordinate, node);
         }
 
         public Edge AddEdge(Node startNode, Node endNode)
         {
-            return AddEdge(startNode.Key, endNode.Key);
+            return AddEdge(startNode.Coordinate, endNode.Coordinate);
         }
 
         public Edge AddEdge(Coordinate startNodeKey, Coordinate endNodeKey)
@@ -167,8 +167,6 @@ namespace StravaStats.BusinessObjects
 
             var edge = new Edge()
             {
-                StartNodeKey = startNodeKey,
-                EndNodeKey = endNodeKey,
                 EdgeKey = new(startNodeKey, endNodeKey)
             };
 
@@ -191,14 +189,14 @@ namespace StravaStats.BusinessObjects
 
         public void AddEdge(Edge edge)
         {
-            Edge e = AddEdge(edge.StartNodeKey, edge.EndNodeKey);
+            Edge e = AddEdge(edge.EdgeKey.StartNodeKey, edge.EdgeKey.EndNodeKey);
             Metrics.AddEdge(e);
             e?.AddEdge(edge);
         }
 
         public Edge? GetEdge(Node nodeA, Node nodeB)
         {
-            EdgeKey edgeKey = new(nodeA.Key, nodeB.Key);
+            EdgeKey edgeKey = new(nodeA.Coordinate, nodeB.Coordinate);
             return GetEdge(edgeKey);
         }
 

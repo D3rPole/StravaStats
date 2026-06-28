@@ -9,18 +9,18 @@ public class GeoUtils
 
     public static double CalculateEdgeLength(Edge edge, Dictionary<Coordinate, Node> nodes)
     {
-        var startNode = nodes[edge.StartNodeKey];
-        var endNode = nodes[edge.EndNodeKey];
+        var startNode = nodes[edge.EdgeKey.StartNodeKey];
+        var endNode = nodes[edge.EdgeKey.EndNodeKey];
         return CalculateDistance(startNode, endNode);
     }
 
     public static double CalculateDistance(Node startNode, Node endNode)
     {
-        double lat1 = startNode.Latitude;
-        double lon1 = startNode.Longitude;
+        double lat1 = startNode.Coordinate.Latitude;
+        double lon1 = startNode.Coordinate.Longitude;
 
-        double lat2 = endNode.Latitude;
-        double lon2 = endNode.Longitude;
+        double lat2 = endNode.Coordinate.Latitude;
+        double lon2 = endNode.Coordinate.Longitude;
 
         double dLat = ToRadians(lat2 - lat1);
         double dLon = ToRadians(lon2 - lon1);
@@ -35,11 +35,11 @@ public class GeoUtils
 
     public static Node Interpolate(Node startNode, Node endNode, double fraction)
     {
-        double lat1 = startNode.Latitude;
-        double lon1 = startNode.Longitude;
+        double lat1 = startNode.Coordinate.Latitude;
+        double lon1 = startNode.Coordinate.Longitude;
 
-        double lat2 = endNode.Latitude;
-        double lon2 = endNode.Longitude;
+        double lat2 = endNode.Coordinate.Latitude;
+        double lon2 = endNode.Coordinate.Longitude;
 
         fraction = Math.Clamp(fraction, 0.0, 1.0);
 

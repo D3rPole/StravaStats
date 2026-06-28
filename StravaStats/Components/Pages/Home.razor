@@ -386,8 +386,8 @@
                         {
                             return new
                             {
-                                start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
-                                end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
+                                start = new[] { targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Longitude, targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Latitude },
+                                end = new[] { targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Longitude, targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Latitude },
                                 color = "#0f0"
                             };
                         }
@@ -399,15 +399,6 @@
                                 break;
                             case Metric.Velocity:
                                 value = (float)e.Metrics.Speed.Average / 25f;
-                                if (e.Metrics.Speed.MaxValue > 50)
-                                {
-                                    return new
-                                    {
-                                        start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
-                                        end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
-                                        color = "#0ff"
-                                    };
-                                }
                                 break;
                             case Metric.HeartRate:
                                 value = (float)e.Metrics.HeartRate.Average / 150f;
@@ -417,15 +408,6 @@
                                 break;
                             case Metric.Acceleration:
                                 value = (float)e.Metrics.Acceleration.Average * 2f;
-                                if (e.Metrics.Acceleration.MaxValue > 2.9)
-                                {
-                                    return new
-                                    {
-                                        start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
-                                        end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
-                                        color = "#0ff"
-                                    };
-                                }
                                 break;
                             case Metric.Grade:
                                 value = (float)e.Metrics.Grade.Average / 12f;
@@ -444,8 +426,8 @@
                         string colorString = $"rgba({color.R},{color.G},{color.B},1)";
                         return new
                         {
-                            start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
-                            end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
+                            start = new[] { targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Longitude, targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Latitude },
+                            end = new[] { targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Longitude, targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Latitude },
                             color = colorString
                         };
                     }).ToList();

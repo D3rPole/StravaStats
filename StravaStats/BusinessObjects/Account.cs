@@ -63,7 +63,8 @@ namespace StravaStats.BusinessObjects
         {
             long ticks = DateTime.Now.Ticks;
 
-            FullGraph = new(Activities.Select(a => a.Graph).ToList());
+            var graphs = Activities.Select(a => a.Graph).ToList();
+            FullGraph = new(graphs);
             SelectedGraph = FullGraph;
             SelectedActivities = Activities;
 

@@ -32,8 +32,8 @@ namespace StravaStats.BusinessObjects
         public void AddEdge(Edge edge, Dictionary<Coordinate, Node> nodes)
         {
             // Reject edges that don't touch this extent at all
-            if (!Extent.ContainsNode(nodes[edge.StartNodeKey]) &&
-                !Extent.ContainsNode(nodes[edge.EndNodeKey]))
+            if (!Extent.ContainsNode(nodes[edge.EdgeKey.StartNodeKey]) &&
+                !Extent.ContainsNode(nodes[edge.EdgeKey.EndNodeKey]))
                 return;
 
             if (isSplit)
