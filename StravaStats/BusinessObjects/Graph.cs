@@ -1,17 +1,17 @@
 ﻿using PolylinerNet;
 using StravaStats.Helper;
-using System.Globalization;
-using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
     public class Graph
     {
-        [JsonConverter(typeof(TupleKeyDictionaryConverter<Edge>))]
-        public Dictionary<(string, string), Edge> Edges { get; set; } = [];
-        public Dictionary<string, List<string>> AdjacencyList { get; set; } = [];
-        public Dictionary<string, Node> Nodes { get; set; } = [];
+        [JsonConverter(typeof(EdgeKeyDictionaryConverter<Edge>))]
+        public Dictionary<EdgeKey, Edge> Edges { get; set; } = [];
+        [JsonConverter(typeof(CoordinateDictionaryConverter<List<Coordinate>>))]
+        public Dictionary<Coordinate, List<Coordinate>> AdjacencyList { get; set; } = [];
+        [JsonConverter(typeof(CoordinateDictionaryConverter<Node>))]
+        public Dictionary<Coordinate, Node> Nodes { get; set; } = [];
         public QuadTree QuadTree { get; set; } = new(new OpenLayers.Blazor.Extent(-180, -90, 180, 90), 0);
         public Metrics Metrics { get; set; } = new();
 
@@ -104,23 +104,24 @@ namespace StravaStats.BusinessObjects
             }
         }
 
-        public List<Dictionary<(string, string), Edge>> GetWays()
+        public List<Dictionary<(Coordinate, Coordinate), Edge>> GetWays()
         {
             var intersections = AdjacencyList.Where(t => t.Value.Count > 2).ToDictionary();
-            var visitedEdges = new HashSet<(string, string)>();
-            var ways = new List<Dictionary<(string, string), Edge>>();
+            var visitedEdges = new HashSet<(Coordinate, Coordinate)>();
+            var ways = new List<Dictionary<(Coordinate, Coordinate), Edge>>();
             foreach (var intersection in intersections)
             {
                 foreach (var adjacentNodeKey in intersection.Value)
                 {
                     if (visitedEdges.Contains((intersection.Key, adjacentNodeKey)) || visitedEdges.Contains((adjacentNodeKey, intersection.Key)))
                         continue;
-                    var way = new Dictionary<(string, string), Edge>();
+                    var way = new Dictionary<(Coordinate, Coordinate), Edge>();
                     var currentNodeKey = adjacentNodeKey;
                     var previousNodeKey = intersection.Key;
                     while (true)
                     {
-                        var edge = GetEdge(previousNodeKey, currentNodeKey);
+                        EdgeKey edgeKey = new(previousNodeKey, currentNodeKey);
+                        var edge = GetEdge(edgeKey);
                         if (edge is null)
                             break;
                         way.Add((edge.StartNodeKey, edge.EndNodeKey), edge);
@@ -128,7 +129,7 @@ namespace StravaStats.BusinessObjects
                         if (AdjacencyList[currentNodeKey].Count != 2) // stop at next intersection
                             break;
                         // move to the next node
-                        var nextNodeKeys = AdjacencyList[currentNodeKey].Where(k => k != previousNodeKey).ToList();
+                        var nextNodeKeys = AdjacencyList[currentNodeKey].Where(k => !k.Equals(previousNodeKey)).ToList();
                         if (nextNodeKeys.Count == 0)
                             break; // dead end
                         previousNodeKey = currentNodeKey;
@@ -148,39 +149,41 @@ namespace StravaStats.BusinessObjects
 
         public void AddNode(Node node)
         {
-            if (Nodes.ContainsKey(node.GetKey()))
+            if (Nodes.ContainsKey(node.Key))
                 return;
-            Nodes.Add(node.GetKey(), node);
+            Nodes.Add(node.Key, node);
         }
 
         public Edge AddEdge(Node startNode, Node endNode)
         {
-            return AddEdge(startNode.GetKey(), endNode.GetKey());
+            return AddEdge(startNode.Key, endNode.Key);
         }
 
-        public Edge AddEdge(string startNodeKey, string endNodeKey)
+        public Edge AddEdge(Coordinate startNodeKey, Coordinate endNodeKey)
         {
-            if (Edges.ContainsKey((startNodeKey, endNodeKey)) || Edges.ContainsKey((endNodeKey, startNodeKey)))
-                return GetEdge(startNodeKey, endNodeKey);
+            EdgeKey edgeKey = new(startNodeKey, endNodeKey);
+            if (Edges.ContainsKey(edgeKey))
+                return GetEdge(edgeKey);
 
             var edge = new Edge()
             {
                 StartNodeKey = startNodeKey,
-                EndNodeKey = endNodeKey
+                EndNodeKey = endNodeKey,
+                EdgeKey = new(startNodeKey, endNodeKey)
             };
 
-            Edges.Add((startNodeKey, endNodeKey), edge);
+            Edges.Add(edgeKey, edge);
             QuadTree.AddEdge(edge, Nodes);
 
             if (AdjacencyList.ContainsKey(startNodeKey))
                 AdjacencyList[startNodeKey].Add(endNodeKey);
             else
-                AdjacencyList.Add(startNodeKey, new List<string> { endNodeKey });
+                AdjacencyList.Add(startNodeKey, new List<Coordinate> { endNodeKey });
 
             if (AdjacencyList.ContainsKey(endNodeKey))
                 AdjacencyList[endNodeKey].Add(startNodeKey);
             else
-                AdjacencyList.Add(endNodeKey, new List<string> { startNodeKey });
+                AdjacencyList.Add(endNodeKey, new List<Coordinate> { startNodeKey });
 
             return edge;
 
@@ -195,15 +198,14 @@ namespace StravaStats.BusinessObjects
 
         public Edge? GetEdge(Node nodeA, Node nodeB)
         {
-            return GetEdge(nodeA.GetKey(), nodeB.GetKey());
+            EdgeKey edgeKey = new(nodeA.Key, nodeB.Key);
+            return GetEdge(edgeKey);
         }
 
-        public Edge? GetEdge(string nodeAKey, string nodeBKey)
+        public Edge? GetEdge(EdgeKey edgeKey)
         {
-            if (Edges.ContainsKey((nodeAKey, nodeBKey)))
-                return Edges[(nodeAKey, nodeBKey)];
-            else if (Edges.ContainsKey((nodeBKey, nodeAKey)))
-                return Edges[(nodeBKey, nodeAKey)];
+            if (Edges.ContainsKey(edgeKey))
+                return Edges[edgeKey];
             else
                 return null;
         }
@@ -213,25 +215,9 @@ namespace StravaStats.BusinessObjects
             return QuadTree.GetClosestEdge(lat, lon, Nodes);
         }
 
-        public List<Edge> GetEdgesForNode(string nodeKey)
+        private Coordinate GetNodeKey(PolylinePoint node)
         {
-            List<Edge> edges = [];
-            if (AdjacencyList.ContainsKey(nodeKey))
-            {
-                foreach (var adjacentNodeKey in AdjacencyList[nodeKey])
-                {
-                    if (Edges.ContainsKey((nodeKey, adjacentNodeKey)))
-                        edges.Add(Edges[(nodeKey, adjacentNodeKey)]);
-                    else if (Edges.ContainsKey((adjacentNodeKey, nodeKey)))
-                        edges.Add(Edges[(adjacentNodeKey, nodeKey)]);
-                }
-            }
-            return edges;
-        }
-
-        private string GetNodeKey(PolylinePoint node)
-        {
-            return $"{node.Latitude.ToString("F6", CultureInfo.InvariantCulture)},{node.Longitude.ToString("F6", CultureInfo.InvariantCulture)}";
+            return new(node.Latitude, node.Longitude);
         }
     }
 }

@@ -63,43 +63,91 @@ namespace StravaStats.BusinessObjects
                             {
                                 // incase distance is unreasnoble long (maybe gps glitch?), assume last known speed
                                 trackingPoint.Velocity = beforeTrackingPoint.Velocity;
-                                trackingPoint.Acceleration = 0;
                             }
                             else
                             {
                                 trackingPoint.Velocity = deltaDistance / deltaTime;
-
-                                double deltaVelocity = trackingPoint.Velocity - beforeTrackingPoint.Velocity;
-                                trackingPoint.Acceleration = deltaVelocity / deltaTime;
                             }
                         }
                         else
                         {
                             // just use last known values
                             trackingPoint.Velocity = beforeTrackingPoint.Velocity;
-                            trackingPoint.Acceleration = 0; // 0 makes more sense for constant velocity
                         }
                     }
                     else
                     {
                         trackingPoint.Velocity = 0;
-                        trackingPoint.Acceleration = 0;
                     }
                 }
                 else
                 {
                     trackingPoint.Velocity = 0;
-                    trackingPoint.Acceleration = 0;
-                }
-
-                if(trackingPoint.Acceleration > 3 || trackingPoint.Acceleration < -3)
-                {
-                    // some sort of unrealistic velocity jump must have happened, we are biking here...
-                    trackingPoint.Acceleration = 0;
                 }
 
                 TrackingPoints.Add(trackingPoint);
             }
+
+            const int range = 5;
+
+            for (int i = 1; i < TrackingPoints.Count; i++)
+            {
+                var trackingPoint = TrackingPoints[i];
+                var lastTrackingPoint = TrackingPoints[i - 1];
+                var lastTrackingPoints = TrackingPoints
+                    .Where((p, index) => index >= i - range && index < i)
+                    .ToList();
+
+                var deltaTime = trackingPoint.Time - lastTrackingPoint.Time;
+                var deltaSpeed = trackingPoint.Velocity - lastTrackingPoint.Velocity;
+                if (deltaSpeed > 20 || deltaTime == 0)
+                    continue;
+                double rawAcceleration = deltaSpeed / deltaTime;
+                if (rawAcceleration > 6)
+                    continue;
+                double accelerationSum = lastTrackingPoints.Sum(p => p.Acceleration ?? 0) + rawAcceleration;
+                trackingPoint.Acceleration = accelerationSum / (lastTrackingPoints.Count + 1);
+            }
+
+            foreach (var trackingPoint in TrackingPoints)
+            {
+                CalculatePower(trackingPoint);
+            }
+        }
+
+        public void CalculatePower(TrackingPoint trackingPoint)
+        {
+            if (trackingPoint.Grade is null || trackingPoint.Acceleration is null || trackingPoint.Velocity <= 0.1)
+            {
+                trackingPoint.Watt = 0;
+                return;
+            }
+
+            double mass = 100;
+            double velocity = trackingPoint.Velocity;
+            double grade = trackingPoint.Grade.Value / 100.0;
+
+            double denominator = Math.Sqrt(1 + grade * grade);
+            double sinGrade = grade / denominator;
+            double cosGrade = 1 / denominator;
+
+            double acceleration = trackingPoint.Acceleration.Value;
+            double gravity = 9.81;
+            double rollingResistanceCoefficent = 0.005;
+            double airDensity = 1.225;
+            double dragCoefficient = 0.32;
+            double driveTrainEfficiency = 0.95;
+
+            double gravityPower = mass * gravity * sinGrade * velocity;
+            double powerDrag = 0.5 * airDensity * dragCoefficient * Math.Pow(velocity, 3);
+            double powerRolling = rollingResistanceCoefficent * mass * gravity * cosGrade * velocity;
+            double powerAcceleration = mass * acceleration * velocity;
+
+            double totalWheelPower = gravityPower + powerDrag + powerRolling + powerAcceleration;
+
+            double riderPower = totalWheelPower / driveTrainEfficiency;
+
+            trackingPoint.Watt = riderPower;
         }
 
         public async Task MatchRoads(string activitiesPath)

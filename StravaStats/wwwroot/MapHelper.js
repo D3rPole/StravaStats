@@ -18,11 +18,6 @@ window.setEdges = function (flatCoords, colors) {
         window._edgeLayer.getSource().clear(true);
     }
 
-    // 2. TELL BLAZOR TO SHOW THE LOADING SPINNER
-    if (blazorComponentRef) {
-        blazorComponentRef.invokeMethodAsync('SetLoadingState', true);
-    }
-
     // 3. Defer the heavy processing so the UI thread can paint the spinner
     requestAnimationFrame(() => {
         setTimeout(() => {

@@ -58,10 +58,14 @@
         <div class="my-map-container flex-grow-1">
             @if (displayedGraph is not null && displayedGraph.Edges.Count() > 0)
             {
+                @if (isLoading)
+                {
+                    <div class="map-loading"></div>
+                }
                 <MudCard Class="stats-overlay">
                     <MudButton OnClick="StatsExpand" Class="d-flex">
                         <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.h6">Stats</MudText>
-                        <MudIcon Icon="@(statsExpanded? Icons.Material.Filled.ArrowDropUp : Icons.Material.Filled.ArrowDropDown)" />
+                        <MudIcon Icon="@(statsExpanded ? Icons.Material.Filled.ArrowDropUp : Icons.Material.Filled.ArrowDropDown)" />
                     </MudButton>
                     <MudCollapse Expanded="statsExpanded">
                         <MudDivider Class="ma-2" />
@@ -87,7 +91,7 @@
                 <Map ConfigureJsMethod="myMapConfig"
                      OnClick="OnClick"
                      InitialZoom="8"
-                     InitialCenter="new Coordinate(7.71667, 52.28333)"
+                     InitialCenter="new OpenLayers.Blazor.Coordinate(7.71667, 52.28333)"
                      @ref="map"
                      @key="@mapLink">
                     <Features>
@@ -116,12 +120,12 @@
                                         @foreach (var quadTree in quadTrees)
                                         {
                                             <Polygon Points="@([
-                                                                                                                                                                                                                                                                                                                                                                                                                                            new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1),
-                                                                                                                                                                                                                                                                new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
-                                                                                                                                                                                                                                                                new Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
-                                                                                                                                                                                                                                                                new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
-                                                                                                                                                                                                                                                                new Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
-                                                                                                                                                                                                                                                                                                                                                                                                                        ])"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                new(quadTree.Extent.X1, quadTree.Extent.Y1),
+                                                                                                                                                                                                                                                                                                             new OpenLayers.Blazor.Coordinate(quadTree.Extent.X2, quadTree.Extent.Y1),
+                                                                                                                                                                                                                                                                                                             new OpenLayers.Blazor.Coordinate(quadTree.Extent.X2, quadTree.Extent.Y2),
+                                                                                                                                                                                                                                                                                                             new OpenLayers.Blazor.Coordinate(quadTree.Extent.X1, quadTree.Extent.Y2),
+                                                                                                                                                                                                                                                                                                             new OpenLayers.Blazor.Coordinate(quadTree.Extent.X1, quadTree.Extent.Y1)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                            ])"
                                                      Fill="#0000"
                                                      Stroke="#0001"
                                                      StrokeThickness="2" />
@@ -135,15 +139,15 @@
             </div>
         </div>
         <div class="activities-list">
-            @if (selectedAccount is not null)
+            @if (selectedAccount is not null && selectedAccount.SelectedActivities is not null)
             {
                 <MudList T="Activity" SelectionMode="@SelectionMode.MultiSelection" @bind-SelectedValues="SelectedActivities">
-                    @foreach (var activity in selectedAccount.Activities)
+                    @foreach (var activity in selectedAccount.SelectedActivities)
                     {
                         <MudListItem Value="activity">
                             <div class="d-inline-flex" style="width:100%;">
                                 <MudText Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Class="flex-grow-1" Typo="Typo.body1">@activity.ActivityHeader.Name</MudText>
-                                <MudText Style="text-wrap: nowrap" Typo="Typo.body1">@($"{(activity.ActivityHeader.Distance/1000):F2} Km")</MudText>
+                                <MudText Style="text-wrap: nowrap" Typo="Typo.body1">@($"{(activity.ActivityHeader.Distance / 1000):F2} Km")</MudText>
                                 <MudText Class="ml-4" Style="text-wrap: nowrap" Typo="Typo.body1">@($"{activity.ActivityHeader.StartDate:dd.MM.yyyy}")</MudText>
                             </div>
                         </MudListItem>
@@ -193,7 +197,7 @@
     }
 
     public string popupContent;
-    public Coordinate? popupCoordinate;
+    public OpenLayers.Blazor.Coordinate? popupCoordinate;
 
     #region DateRange
 
@@ -279,7 +283,6 @@
     {
         if (selectedAccount is null)
             return;
-        selectedAccount.ResetSelection();
         Start = new(DateOnly.FromDateTime(selectedAccount.StartDateRange), TimeOnly.MinValue);
         End = new(DateOnly.FromDateTime(selectedAccount.EndDateRange), TimeOnly.MaxValue);
         _sizeRange = dateRange;
@@ -318,7 +321,7 @@
 
     #region Graph
 
-    private void OnClick(Coordinate coordinate)
+    private void OnClick(OpenLayers.Blazor.Coordinate coordinate)
     {
         if (selectedAccount is null)
             return;
@@ -351,6 +354,7 @@
                         $"Grade: {edge.Metrics.Grade.Average:F2} %\n" +
                         $"Average Speed: {edge.Metrics.Speed.Average:F2} Km/h\n" +
                         $"Average Acceleration: {edge.Metrics.Acceleration.Average:F2} m/s²\n" +
+                        $"Max Acceleration: {edge.Metrics.Acceleration.MaxValue:F2} m/s²\n" +
                         $"Average Wattage: {edge.Metrics.Wattage.Average:F2} W\n";
 
         StateHasChanged();
@@ -395,6 +399,15 @@
                                 break;
                             case Metric.Velocity:
                                 value = (float)e.Metrics.Speed.Average / 25f;
+                                if (e.Metrics.Speed.MaxValue > 50)
+                                {
+                                    return new
+                                    {
+                                        start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
+                                        end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
+                                        color = "#0ff"
+                                    };
+                                }
                                 break;
                             case Metric.HeartRate:
                                 value = (float)e.Metrics.HeartRate.Average / 150f;
@@ -404,6 +417,15 @@
                                 break;
                             case Metric.Acceleration:
                                 value = (float)e.Metrics.Acceleration.Average * 2f;
+                                if (e.Metrics.Acceleration.MaxValue > 2.9)
+                                {
+                                    return new
+                                    {
+                                        start = new[] { targetGraph.Nodes[e.StartNodeKey].Longitude, targetGraph.Nodes[e.StartNodeKey].Latitude },
+                                        end = new[] { targetGraph.Nodes[e.EndNodeKey].Longitude, targetGraph.Nodes[e.EndNodeKey].Latitude },
+                                        color = "#0ff"
+                                    };
+                                }
                                 break;
                             case Metric.Grade:
                                 value = (float)e.Metrics.Grade.Average / 12f;
@@ -455,9 +477,11 @@
     }
 
     [JSInvokable]
-    public void SetLoadingState(bool isLoading)
+    public async void SetLoadingState(bool isLoading)
     {
-        this.isLoading = isLoading;
+        if (!isLoading)
+            this.isLoading = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     #endregion
@@ -470,8 +494,11 @@
         {
             if (selectedAccount is null)
                 return;
+            isLoading = true;
+            await InvokeAsync(StateHasChanged);
             selectedAccount.SelectRange(Start, End);
             await SetGraph(selectedAccount.SelectedGraph);
+            await InvokeAsync(StateHasChanged);
         }).Debounce(TimeSpan.FromMilliseconds(200));
 
         await base.OnInitializedAsync();

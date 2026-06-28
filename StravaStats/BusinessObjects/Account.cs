@@ -65,6 +65,7 @@ namespace StravaStats.BusinessObjects
 
             FullGraph = new(Activities.Select(a => a.Graph).ToList());
             SelectedGraph = FullGraph;
+            SelectedActivities = Activities;
 
             double ms = (double)(DateTime.Now.Ticks - ticks) / TimeSpan.TicksPerMillisecond;
             Console.WriteLine(Name + $": {ms:F2} ms");

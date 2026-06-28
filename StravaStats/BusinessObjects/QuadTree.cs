@@ -29,7 +29,7 @@ namespace StravaStats.BusinessObjects
             this.CurrentDepth = currentDepth;
         }
 
-        public void AddEdge(Edge edge, Dictionary<string, Node> nodes)
+        public void AddEdge(Edge edge, Dictionary<Coordinate, Node> nodes)
         {
             // Reject edges that don't touch this extent at all
             if (!Extent.ContainsNode(nodes[edge.StartNodeKey]) &&
@@ -52,7 +52,7 @@ namespace StravaStats.BusinessObjects
             }
         }
 
-        private void Split(Dictionary<string, Node> nodes)
+        private void Split(Dictionary<Coordinate, Node> nodes)
         {
             double midX = (Extent.X1 + Extent.X2) / 2;
             double midY = (Extent.Y1 + Extent.Y2) / 2;
@@ -74,7 +74,7 @@ namespace StravaStats.BusinessObjects
             }
         }
 
-        public Edge? GetClosestEdge(double lat, double lon, Dictionary<string, Node> nodes)
+        public Edge? GetClosestEdge(double lat, double lon, Dictionary<Coordinate, Node> nodes)
         {
             if (isSplit)
             {
@@ -100,7 +100,7 @@ namespace StravaStats.BusinessObjects
             }
         }
 
-        private IEnumerable<Edge> GetLeafEdges(double lat, double lon, Dictionary<string, Node> nodes)
+        private IEnumerable<Edge> GetLeafEdges(double lat, double lon, Dictionary<Coordinate, Node> nodes)
         {
             if (isSplit)
             {
