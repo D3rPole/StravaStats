@@ -50,8 +50,8 @@
         position: absolute;
         top: 8px;
         left: 36px;
-        z-index: 1000;
-        padding: 4px 8px 4px 8px;
+        z-index: 999;
+        padding: 8px;
         border-radius: 16px;
         transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         overflow: hidden;
@@ -63,8 +63,24 @@
             width: 300px;
         }
 
-.activities-list {
-    height: 500px;
-    width: 700px;
-    overflow-y: auto;
-}
+    .my-map-container ::deep .activities-list {
+        max-height: 100%;
+        margin: 4px;
+        overflow-y: auto;
+    }
+
+    .my-map-container ::deep .activities-list-card {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        width: 150px;
+        height: 100%;
+        padding: 8px;
+        z-index: 999;
+        min-width: 0px;
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .my-map-container ::deep .activities-list-card.enabled {
+        width: 600px;
+    }
