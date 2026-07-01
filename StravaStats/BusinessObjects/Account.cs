@@ -88,39 +88,49 @@ namespace StravaStats.BusinessObjects
 
             SelectedStart = from;
             SelectedEnd = to;
-            SelectedActivities = Activities.Where(a =>
-                a.ActivityHeader.StartDate is not null &&
-                a.ActivityHeader.StartDate >= from &&
-                a.ActivityHeader.StartDate <= to).ToList();
+            SelectedActivities = GetActivitiesInRange(from, to);
 
             SelectedGraph = new(SelectedActivities.Select(a => a.Graph).ToList());
 
             double ms = (double)(DateTime.Now.Ticks - ticks) / TimeSpan.TicksPerMillisecond;
             Console.WriteLine(Name + $": {ms:F2} ms");
         }
+
+        public List<Activity> GetActivitiesInRange(DateTime from, DateTime to)
+        {
+            return Activities.Where(a =>
+                a.ActivityHeader.StartDate is not null &&
+                a.ActivityHeader.StartDate >= from &&
+                a.ActivityHeader.StartDate <= to).ToList();
+        }
+
+        public List<Activity> GetActivities(IEnumerable<long> activityIds)
+        {
+            return Activities.Where(a => activityIds.Any(id => a.ActivityHeader.Id == id)).ToList();
+        }
     }
+}
 
-    public class Token
-    {
-        [JsonPropertyName("token_type")]
-        public string Type { get; set; }
+public class Token
+{
+    [JsonPropertyName("token_type")]
+    public string Type { get; set; }
 
-        [JsonPropertyName("access_token")]
-        public string AccessToken { get; set; }
+    [JsonPropertyName("access_token")]
+    public string AccessToken { get; set; }
 
-        [JsonPropertyName("expires_at")]
-        public int ExpiresAt { get; set; }
+    [JsonPropertyName("expires_at")]
+    public int ExpiresAt { get; set; }
 
-        [JsonPropertyName("expires_in")]
-        public int ExpiresIn { get; set; }
+    [JsonPropertyName("expires_in")]
+    public int ExpiresIn { get; set; }
 
-        [JsonPropertyName("refresh_token")]
-        public string RefreshToken { get; set; }
+    [JsonPropertyName("refresh_token")]
+    public string RefreshToken { get; set; }
 
-        [JsonPropertyName("scope")]
-        public string Scope { get; set; }
+    [JsonPropertyName("scope")]
+    public string Scope { get; set; }
 
-        [JsonIgnore]
-        public DateTime ExpiresAtDateTime => DateTimeOffset.FromUnixTimeSeconds(ExpiresAt).UtcDateTime;
-    }
+    [JsonIgnore]
+    public DateTime ExpiresAtDateTime => DateTimeOffset.FromUnixTimeSeconds(ExpiresAt).UtcDateTime;
 }

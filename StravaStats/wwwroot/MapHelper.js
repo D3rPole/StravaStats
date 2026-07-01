@@ -37,53 +37,54 @@ window.setEdges = function (flatCoords, colors) {
             map.addLayer(window._edgeLayer);
         }
 
-        const CHUNK_SIZE = 8000;
-        const totalEdges = colors.length;
-        const colorGroups = new Map();
-        let cursor = 0;
-
         const DEG_TO_RAD = Math.PI / 180;
         const R = 6378137;
+        const R_RAD = R * DEG_TO_RAD;
+        // Precompute log constant
+        const HALF_R = R / 2;
 
-        function lonLatToMerc(lon, lat) {
-            const x = lon * DEG_TO_RAD * R;
-            const sinLat = Math.sin(lat * DEG_TO_RAD);
-            const y = R * Math.log((1 + sinLat) / (1 - sinLat)) / 2;
-            return [x, y];
+        const totalEdges = colors.length;
+
+        // --- 1. Group indices by color using a plain object (faster than Map for string keys) ---
+        const colorGroups = Object.create(null);
+        for (let i = 0; i < totalEdges; i++) {
+            const color = colors[i] || '#ffffff';
+            if (colorGroups[color] === undefined) colorGroups[color] = [];
+            colorGroups[color].push(i);
         }
 
-        function processChunk() {
-            const end = Math.min(cursor + CHUNK_SIZE, totalEdges);
-            for (let i = cursor; i < end; i++) {
-                const o = i * 4;
-                const startLon = flatCoords[o];
-                if (startLon === undefined) continue;
-                const color = colors[i] || '#ffffff';
-                const line = [
-                    lonLatToMerc(startLon, flatCoords[o + 1]),
-                    lonLatToMerc(flatCoords[o + 2], flatCoords[o + 3])
+        // --- 2. Build features: one MultiLineString per color, coords projected inline ---
+        const features = [];
+
+        for (const color in colorGroups) {
+            const indices = colorGroups[color];
+            const n = indices.length;
+            // Pre-allocate: each line = [[x0,y0],[x1,y1]]
+            const lines = new Array(n);
+
+            for (let j = 0; j < n; j++) {
+                const o = indices[j] * 4;
+                const lon0 = flatCoords[o] * R_RAD;
+                const lat0 = flatCoords[o + 1] * DEG_TO_RAD;
+                const lon1 = flatCoords[o + 2] * R_RAD;
+                const lat1 = flatCoords[o + 3] * DEG_TO_RAD;
+
+                // Mercator Y — avoid repeated sin+log by inlining
+                const sin0 = Math.sin(lat0);
+                const sin1 = Math.sin(lat1);
+                lines[j] = [
+                    [lon0, HALF_R * Math.log((1 + sin0) / (1 - sin0))],
+                    [lon1, HALF_R * Math.log((1 + sin1) / (1 - sin1))]
                 ];
-                let group = colorGroups.get(color);
-                if (!group) { group = []; colorGroups.set(color, group); }
-                group.push(line);
             }
-            cursor = end;
 
-            if (cursor < totalEdges) {
-                requestAnimationFrame(processChunk);
-            } else {
-                const features = [];
-                for (const [color, lines] of colorGroups) {
-                    features.push(new ol.Feature({
-                        geometry: new ol.geom.MultiLineString(lines),
-                        color
-                    }));
-                }
-                window._edgeLayer.getSource().addFeatures(features);
-                resolve();
-            }
+            features.push(new ol.Feature({
+                geometry: new ol.geom.MultiLineString(lines),
+                color
+            }));
         }
 
-        requestAnimationFrame(processChunk);
+        window._edgeLayer.getSource().addFeatures(features);
+        resolve();
     });
 };

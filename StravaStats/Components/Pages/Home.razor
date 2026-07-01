@@ -9,6 +9,7 @@
 @inject AccountService accountService
 @inject IConfiguration configuration
 @inject IJSRuntime JS
+@inject ILogger<Home> logger
 
 <div>
     <MudCard Class="ma-2">
@@ -525,8 +526,14 @@
             isLoading = true;
             await InvokeAsync(StateHasChanged);
             await JS.InvokeVoidAsync("clearMap");
+            long ticks = DateTime.Now.Ticks;
             selectedAccount.SelectRange(Start, End);
+            long ticksAfter = DateTime.Now.Ticks;
+            logger.LogInformation("SelectRange " + (ticksAfter - ticks) / TimeSpan.TicksPerMillisecond + " ms");
+            ticks = DateTime.Now.Ticks;
             await SetGraph(selectedAccount.SelectedGraph);
+            ticksAfter = DateTime.Now.Ticks;
+            logger.LogInformation("SetGraph " + (ticksAfter - ticks) / TimeSpan.TicksPerMillisecond + " ms");
             isLoading = false;
             await InvokeAsync(StateHasChanged);
         }).Debounce(TimeSpan.FromMilliseconds(200));

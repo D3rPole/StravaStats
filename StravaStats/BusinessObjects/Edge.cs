@@ -9,22 +9,38 @@ public class MetricSummary
     public double MaxValue => maxValue == double.MinValue ? 0 : maxValue;
 
     [JsonIgnore]
+    public double MinValue => minValue == double.MaxValue ? 0 : minValue;
+
+    [JsonIgnore]
     public double Average => count == 0 ? 0 : totalValue / count;
 
     [JsonInclude]
     private double maxValue = double.MinValue;
+    public Coordinate MaxPosition { get; set; }
+
+    [JsonInclude]
+    private double minValue = double.MaxValue;
+    public Coordinate MinPosition { get; set; }
 
     [JsonInclude]
     private double totalValue { get; set; }
     [JsonInclude]
     private int count { get; set; }
-    public void AddMetric(double? value)
+    public void AddMetric(double? value, Coordinate position)
     {
         if (value is null) return;
         count++;
         totalValue += value.Value;
         if (maxValue < value.Value)
+        {
             maxValue = value.Value;
+            MaxPosition = position;
+        }
+        if (minValue > value.Value)
+        {
+            minValue = value.Value;
+            MinPosition = position;
+        }
     }
 
     public void AddMetric(MetricSummary metric)
@@ -33,7 +49,15 @@ public class MetricSummary
         count += metric.count;
         totalValue += metric.totalValue;
         if (maxValue < metric.maxValue)
+        {
             maxValue = metric.maxValue;
+            MaxPosition = metric.MaxPosition;
+        }
+        if (minValue > metric.minValue)
+        {
+            minValue = metric.minValue;
+            MinPosition = metric.MinPosition;
+        }
     }
 }
 public class Metrics
@@ -46,11 +70,11 @@ public class Metrics
 
     public void AddDataPoint(TrackingPoint trackingPoint)
     {
-        HeartRate.AddMetric(trackingPoint.HeartRate);
-        Speed.AddMetric(trackingPoint.SpeedKmh);
-        Grade.AddMetric(trackingPoint.Grade);
-        Wattage.AddMetric(trackingPoint.Watt);
-        Acceleration.AddMetric(trackingPoint.Acceleration);
+        HeartRate.AddMetric(trackingPoint.HeartRate, trackingPoint.Coordinate);
+        Speed.AddMetric(trackingPoint.SpeedKmh, trackingPoint.Coordinate);
+        Grade.AddMetric(trackingPoint.Grade, trackingPoint.Coordinate);
+        Wattage.AddMetric(trackingPoint.Watt, trackingPoint.Coordinate);
+        Acceleration.AddMetric(trackingPoint.Acceleration, trackingPoint.Coordinate);
     }
 
     public void AddEdge(Edge edge)

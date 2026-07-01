@@ -1,4 +1,6 @@
-﻿namespace StravaStats.BusinessObjects
+﻿using System.Text.Json.Serialization;
+
+namespace StravaStats.BusinessObjects
 {
     public class TrackingPoint
     {
@@ -14,5 +16,21 @@
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public double Distance { get; set; }
+
+        [JsonInclude]
+        private Coordinate? coordinate { get; set; }
+
+        [JsonIgnore]
+        public Coordinate Coordinate
+        {
+            get
+            {
+                if (coordinate is not null)
+                    return coordinate.Value;
+
+                coordinate = new(Latitude, Longitude);
+                return coordinate.Value;
+            }
+        }
     }
 }
