@@ -68,22 +68,43 @@ public class Metrics
     public MetricSummary Wattage { get; set; } = new();
     public MetricSummary Acceleration { get; set; } = new();
 
-    public void AddDataPoint(TrackingPoint trackingPoint)
+    public Metrics AddDataPoint(TrackingPoint trackingPoint)
     {
         HeartRate.AddMetric(trackingPoint.HeartRate, trackingPoint.Coordinate);
         Speed.AddMetric(trackingPoint.SpeedKmh, trackingPoint.Coordinate);
         Grade.AddMetric(trackingPoint.Grade, trackingPoint.Coordinate);
         Wattage.AddMetric(trackingPoint.Watt, trackingPoint.Coordinate);
         Acceleration.AddMetric(trackingPoint.Acceleration, trackingPoint.Coordinate);
+        return this;
     }
 
-    public void AddEdge(Edge edge)
+    public Metrics AddEdge(Edge edge)
     {
         HeartRate.AddMetric(edge.Metrics.HeartRate);
         Speed.AddMetric(edge.Metrics.Speed);
         Grade.AddMetric(edge.Metrics.Grade);
         Wattage.AddMetric(edge.Metrics.Wattage);
         Acceleration.AddMetric(edge.Metrics.Acceleration);
+        return this;
+    }
+
+    public Metrics AddMetrics(Metrics metrics)
+    {
+        HeartRate.AddMetric(metrics.HeartRate);
+        Speed.AddMetric(metrics.Speed);
+        Grade.AddMetric(metrics.Grade);
+        Wattage.AddMetric(metrics.Wattage);
+        Acceleration.AddMetric(metrics.Acceleration);
+        return this;
+    }
+
+    public Metrics AddMetrics(IEnumerable<Metrics> metricsList)
+    {
+        foreach(var metrics in metricsList)
+        {
+            AddMetrics(metrics);
+        }
+        return this;
     }
 }
 

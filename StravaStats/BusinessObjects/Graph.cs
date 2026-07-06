@@ -192,7 +192,7 @@ namespace StravaStats.BusinessObjects
         public void AddEdge(Edge edge)
         {
             Edge e = AddEdge(edge.EdgeKey.StartNodeKey, edge.EdgeKey.EndNodeKey);
-            Metrics.AddEdge(e);
+            Metrics.AddEdge(edge);
             e?.AddEdge(edge);
         }
 

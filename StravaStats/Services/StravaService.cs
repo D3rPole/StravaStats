@@ -90,12 +90,16 @@ namespace StravaStats.Services
             if (!Directory.Exists(targetDirectory))
                 Directory.CreateDirectory(targetDirectory);
 
-            int downloaded = 0;
+            int loaded = 0;
             foreach (ActivityHeader activity in activities)
             {
                 string activityPath = Path.Combine(targetDirectory, activity.Id + ".json");
                 if (File.Exists(activityPath))
+                {
+                    loaded++;
+                    logger.LogInformation($"Activity {loaded} / {activities.Count} for {account.Name} already Cached");
                     continue;
+                }
 
                 var response = await httpClient.GetAsync($"https://www.strava.com/api/v3/activities/{activity.Id}/streams?keys=time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,moving,grade_smooth&key_by_type=true");
                 if (!response.IsSuccessStatusCode)
@@ -108,8 +112,8 @@ namespace StravaStats.Services
                 var rawActivity = JsonSerializer.Deserialize<RawActivity>(streamResponse);
                 rawActivity.ActivityHeader = activity;
                 File.WriteAllText(activityPath, JsonSerializer.Serialize(rawActivity));
-                downloaded++;
-                logger.LogInformation($"Downloaded {downloaded} / {activities.Count} Activities for {account.Name}");
+                loaded++;
+                logger.LogInformation($"Downloaded {loaded} / {activities.Count} Activities for {account.Name}");
             }
         }
     }

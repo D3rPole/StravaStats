@@ -21,7 +21,10 @@ namespace StravaStats.Services
 
             List<Task> tasks = [];
             List<Activity> activities = [];
-            foreach (string stravaFile in Directory.EnumerateFiles(stravaActivitiesPath))
+            var stravaFiles = Directory.EnumerateFiles(stravaActivitiesPath).ToList();
+            logger.LogInformation($"Found {stravaFiles.Count} Activities");
+            int loaded = 0;
+            foreach (string stravaFile in stravaFiles)
             {
                 var task = Task.Run(async () =>
                 {
@@ -33,6 +36,8 @@ namespace StravaStats.Services
 
                         if (act is not null)
                         {
+                            loaded++;
+                            logger.LogInformation($"Loaded cached Activity {loaded}/{stravaFiles.Count}: {act.ActivityHeader.Id}");
                             activities.Add(act);
                             return;
                         }
@@ -45,11 +50,16 @@ namespace StravaStats.Services
                         return;
                     }
                     if (rawActivity.Distance is null)
+                    {
+                        logger.LogError($"Activity {stravaFile} has no distance. Data is corrupted or gps data is missing.");
                         return;
+                    }
                     var activity = new Activity(rawActivity);
                     await activity.MatchRoads(activitiesPath);
                     string activityJson = JsonSerializer.Serialize(activity);
                     File.WriteAllText(activityCachedFile, activityJson);
+                    loaded++;
+                    logger.LogInformation($"Created cached Activity {loaded}/{stravaFiles.Count}: {activity.ActivityHeader.Id}");
                     activities.Add(activity);
                 });
                 tasks.Add(task);

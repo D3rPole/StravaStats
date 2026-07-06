@@ -8,6 +8,7 @@ namespace StravaStats.BusinessObjects
         public double? HeartRate { get; set; }
         public double Velocity { get; set; }
         public double SpeedKmh => Velocity * 3.6;
+        public double VelocitySmooth { get; set; }
         public double? Grade { get; set; }
         public double? Watt { get; set; }
         public double? Acceleration { get; set; }

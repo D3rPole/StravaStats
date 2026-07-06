@@ -41,6 +41,8 @@ namespace StravaStats.BusinessObjects
                     trackingPoint.Altitude = ((JsonElement)rawActivity.Altitude.Data[i]).GetDouble();
                 if (rawActivity.Time is not null)
                     trackingPoint.Time = ((JsonElement)rawActivity.Time.Data[i]).GetInt32();
+                if (rawActivity.Velocity is not null)
+                    trackingPoint.VelocitySmooth = ((JsonElement)rawActivity.Velocity.Data[i]).GetDouble();
                 if (rawActivity.LatLng is not null)
                 {
                     var obj = (JsonElement)rawActivity.LatLng.Data[i];

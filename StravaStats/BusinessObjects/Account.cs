@@ -108,6 +108,12 @@ namespace StravaStats.BusinessObjects
         {
             return Activities.Where(a => activityIds.Any(id => a.ActivityHeader.Id == id)).ToList();
         }
+
+        public Graph GetGraphByActivities(IEnumerable<long> activityIds)
+        {
+            var activities = GetActivities(activityIds);
+            return new Graph(activities.Select(a => a.Graph).ToList());
+        }
     }
 }
 

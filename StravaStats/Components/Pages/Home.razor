@@ -80,24 +80,24 @@
                     <MudIcon Icon="@(statsExpanded ? Icons.Material.Filled.ArrowDropUp : Icons.Material.Filled.ArrowDropDown)" />
                 </MudButton>
                 <MudCollapse Expanded="@(statsExpanded)">
-                    @if (displayedGraph is not null && displayedGraph.Edges.Count() > 0)
+                    @if (selectedMetrics is not null)
                     {
                         <MudDivider Class="ma-2" />
                         <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.body2">Maximums</MudText>
                         <MudDivider Class="ma-2" />
-                        <MudText Typo="Typo.body1">Max Velocity: @($"{displayedGraph.Metrics.Speed.MaxValue:F2}") Km/h</MudText>
-                        <MudText Typo="Typo.body1">Max Acceleration: @($"{displayedGraph.Metrics.Acceleration.MaxValue:F2}") m/s²</MudText>
-                        <MudText Typo="Typo.body1">Max Wattage: @($"{displayedGraph.Metrics.Wattage.MaxValue:F2}") W</MudText>
-                        <MudText Typo="Typo.body1">Max Heartrate: @($"{displayedGraph.Metrics.HeartRate.MaxValue:F2}") BPM</MudText>
-                        <MudText Typo="Typo.body1">Max Grade: @($"{displayedGraph.Metrics.Grade.MaxValue:F2}") %</MudText>
+                        <MudText Typo="Typo.body1">Max Velocity: @($"{selectedMetrics.Speed.MaxValue:F2}") Km/h</MudText>
+                        <MudText Typo="Typo.body1">Max Acceleration: @($"{selectedMetrics.Acceleration.MaxValue:F2}") m/s²</MudText>
+                        <MudText Typo="Typo.body1">Max Wattage: @($"{selectedMetrics.Wattage.MaxValue:F2}") W</MudText>
+                        <MudText Typo="Typo.body1">Max Heartrate: @($"{selectedMetrics.HeartRate.MaxValue:F2}") BPM</MudText>
+                        <MudText Typo="Typo.body1">Max Grade: @($"{selectedMetrics.Grade.MaxValue:F2}") %</MudText>
                         <MudDivider Class="ma-2" />
                         <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.body2">Averages</MudText>
                         <MudDivider Class="ma-2" />
-                        <MudText Typo="Typo.body1">Average Velocity: @($"{displayedGraph.Metrics.Speed.Average:F2}") Km/h</MudText>
-                        <MudText Typo="Typo.body1">Average Acceleration: @($"{displayedGraph.Metrics.Acceleration.Average:F2}") m/s²</MudText>
-                        <MudText Typo="Typo.body1">Average Wattage: @($"{displayedGraph.Metrics.Wattage.Average:F2}") W</MudText>
-                        <MudText Typo="Typo.body1">Average Heartrate: @($"{displayedGraph.Metrics.HeartRate.Average:F2}") BPM</MudText>
-                        <MudText Typo="Typo.body1">Average Grade: @($"{displayedGraph.Metrics.Grade.Average:F2}") %</MudText>
+                        <MudText Typo="Typo.body1">Average Velocity: @($"{selectedMetrics.Speed.Average:F2}") Km/h</MudText>
+                        <MudText Typo="Typo.body1">Average Acceleration: @($"{selectedMetrics.Acceleration.Average:F2}") m/s²</MudText>
+                        <MudText Typo="Typo.body1">Average Wattage: @($"{selectedMetrics.Wattage.Average:F2}") W</MudText>
+                        <MudText Typo="Typo.body1">Average Heartrate: @($"{selectedMetrics.HeartRate.Average:F2}") BPM</MudText>
+                        <MudText Typo="Typo.body1">Average Grade: @($"{selectedMetrics.Grade.Average:F2}") %</MudText>
                     }
                 </MudCollapse>
             </MudCard>
@@ -119,6 +119,24 @@
                                     @key="markerKey">
                             </Marker>
                         }
+                        @if (selectedMetrics is not null && !isLoading && statsExpanded)
+                        {
+                            <Marker Type="MarkerType.MarkerFlag"
+                                    Coordinate="@(selectedMetrics.Speed.MaxPosition.ToOpenLayersCoordinate())"
+                                    Text="@($"Max Speed: {selectedMetrics.Speed.MaxValue:F2} km/h")" />
+                            <Marker Type="MarkerType.MarkerFlag"
+                                    Coordinate="@(selectedMetrics.Acceleration.MaxPosition.ToOpenLayersCoordinate())"
+                                    Text="@($"Max Acceleration: {selectedMetrics.Acceleration.MaxValue:F2} m/s²")" />
+                            <Marker Type="MarkerType.MarkerFlag"
+                                    Coordinate="@(selectedMetrics.HeartRate.MaxPosition.ToOpenLayersCoordinate())"
+                                    Text="@($"Max Heartrate: {selectedMetrics.HeartRate.MaxValue:F2} bpm")" />
+                            <Marker Type="MarkerType.MarkerFlag"
+                                    Coordinate="@(selectedMetrics.Grade.MaxPosition.ToOpenLayersCoordinate())"
+                                    Text="@($"Max Geade: {(selectedMetrics.Grade.MaxValue):F2} %")" />
+                            <Marker Type="MarkerType.MarkerFlag"
+                                    Coordinate="@(selectedMetrics.Wattage.MaxPosition.ToOpenLayersCoordinate())"
+                                    Text="@($"Max Wattage: {selectedMetrics.Wattage.MaxValue:F2} W")" />
+                        }
                     </Features>
                     <Layers>
                         <Layer LayerType="LayerType.Tile"
@@ -135,12 +153,12 @@
                                         @foreach (var quadTree in quadTrees)
                                         {
                                             <Polygon Points="@([
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 new(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1),
-                                                                                                                                                                                                                                                                                                                                                                                                                         new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y1),
-                                                                                                                                                                                                                                                                                                                                                                                                                                  new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y2),
-                                                                                                                                                                                                                                                                                                                                                                                                                                  new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y2),
-                                                                                                                                                                                                                                                                                                                                                                                                                                  new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ])"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                             new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y1),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                      new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y2),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                      new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y2),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                      new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ])"
                                                      Fill="#0000"
                                                      Stroke="#0001"
                                                      StrokeThickness="2" />
@@ -160,7 +178,7 @@
                         <MudIcon Icon="@(listExpanded ? Icons.Material.Filled.ArrowDropUp : Icons.Material.Filled.ArrowDropDown)" />
                     </MudButton>
                     <MudCollapse Expanded="@(listExpanded)">
-                        <MudDivider/>
+                        <MudDivider />
                         @if (selectedAccount is not null && selectedAccount.SelectedActivities is not null)
                         {
                             <MudDataGrid Dense="true" T="Activity" MultiSelection="true" Items="selectedAccount.SelectedActivities" @bind-SelectedItems="SelectedActivities">
@@ -192,13 +210,13 @@
                                 </Columns>
                             </MudDataGrid>
                         }
-                        </MudCollapse>
-                    </MudCard>
-                </div>
+                    </MudCollapse>
+                </MudCard>
             </div>
-
         </div>
+
     </div>
+</div>
 
 @code {
     HashSet<Activity> SelectedActivities
@@ -208,9 +226,20 @@
         {
             field = value;
             displayedGraph = null;
+            if (selectedAccount is null || selectedAccount.SelectedGraph is null)
+            {
+                UpdateDisplayedGraph();
+                return;
+            }
+            if (field is null || field.Count() == 0)
+                selectedMetrics = selectedAccount.SelectedGraph.Metrics;
+            else
+                selectedMetrics = selectedAccount.GetGraphByActivities(field.Select(a => a.ActivityHeader.Id)).Metrics;
+
             UpdateDisplayedGraph();
         }
     } = [];
+    Metrics selectedMetrics;
     Action UpdateGraphAction;
     private bool isLoading;
     Graph displayedGraph;
@@ -336,6 +365,8 @@
             return;
         Start = new(DateOnly.FromDateTime(selectedAccount.StartDateRange), TimeOnly.MinValue);
         End = new(DateOnly.FromDateTime(selectedAccount.EndDateRange), TimeOnly.MaxValue);
+        selectedMetrics = selectedAccount.SelectedGraph.Metrics;
+        SelectedActivities = [];
         _sizeRange = dateRange;
         UpdateDisplayedGraph();
     }
@@ -365,6 +396,7 @@
 
         Start = new(DateOnly.FromDateTime(selectedAccount.StartDateRange), TimeOnly.MinValue);
         End = new(DateOnly.FromDateTime(selectedAccount.EndDateRange), TimeOnly.MaxValue);
+        selectedMetrics = selectedAccount.SelectedGraph.Metrics;
         _sizeRange = dateRange;
     }
 

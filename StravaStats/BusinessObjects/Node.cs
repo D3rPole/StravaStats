@@ -46,6 +46,11 @@ public struct Coordinate : IEquatable<Coordinate>
         double lon = double.Parse(values[1]);
         return new(lat, lon);
     }
+
+    public OpenLayers.Blazor.Coordinate ToOpenLayersCoordinate()
+    {
+        return new OpenLayers.Blazor.Coordinate(Longitude, Latitude);
+    }
 }
 
 public class Node
