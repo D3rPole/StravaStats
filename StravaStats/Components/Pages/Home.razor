@@ -112,7 +112,9 @@
                     <Features>
                         @if (popupCoordinate != null && !string.IsNullOrWhiteSpace(popupContent))
                         {
-                            <Marker Type="MarkerType.MarkerFlag"
+                            <Marker Fill="@GetPrimaryColorString()"
+                                    Stroke="@GetBlackColorString()"
+                                    TextColor="@GetTextColorString()" Type="MarkerType.MarkerFlag"
                                     Coordinate="popupCoordinate.Value"
                                     Text="@popupContent"
                                     Popup
@@ -121,19 +123,31 @@
                         }
                         @if (selectedMetrics is not null && !isLoading && statsExpanded)
                         {
-                            <Marker Type="MarkerType.MarkerFlag"
+                            <Marker Fill="@GetPrimaryColorString()"
+                                    Stroke="@GetBlackColorString()"
+                                    TextColor="@GetTextColorString()"
+                                    Type="MarkerType.MarkerFlag"
                                     Coordinate="@(selectedMetrics.Speed.MaxPosition.ToOpenLayersCoordinate())"
                                     Text="@($"Max Speed: {selectedMetrics.Speed.MaxValue:F2} km/h")" />
-                            <Marker Type="MarkerType.MarkerFlag"
+                            <Marker Fill="@GetPrimaryColorString()"
+                                    Stroke="@GetBlackColorString()"
+                                    TextColor="@GetTextColorString()"
+                                    Type="MarkerType.MarkerFlag"
                                     Coordinate="@(selectedMetrics.Acceleration.MaxPosition.ToOpenLayersCoordinate())"
                                     Text="@($"Max Acceleration: {selectedMetrics.Acceleration.MaxValue:F2} m/s²")" />
-                            <Marker Type="MarkerType.MarkerFlag"
+                            <Marker Fill="@GetPrimaryColorString()"
+                                    Stroke="@GetBlackColorString()"
+                                    TextColor="@GetTextColorString()" Type="MarkerType.MarkerFlag"
                                     Coordinate="@(selectedMetrics.HeartRate.MaxPosition.ToOpenLayersCoordinate())"
                                     Text="@($"Max Heartrate: {selectedMetrics.HeartRate.MaxValue:F2} bpm")" />
-                            <Marker Type="MarkerType.MarkerFlag"
+                            <Marker Fill="@GetPrimaryColorString()"
+                                    Stroke="@GetBlackColorString()"
+                                    TextColor="@GetTextColorString()" Type="MarkerType.MarkerFlag"
                                     Coordinate="@(selectedMetrics.Grade.MaxPosition.ToOpenLayersCoordinate())"
                                     Text="@($"Max Geade: {(selectedMetrics.Grade.MaxValue):F2} %")" />
-                            <Marker Type="MarkerType.MarkerFlag"
+                            <Marker Fill="@GetPrimaryColorString()"
+                                    Stroke="@GetBlackColorString()"
+                                    TextColor="@GetTextColorString()" Type="MarkerType.MarkerFlag"
                                     Coordinate="@(selectedMetrics.Wattage.MaxPosition.ToOpenLayersCoordinate())"
                                     Text="@($"Max Wattage: {selectedMetrics.Wattage.MaxValue:F2} W")" />
                         }
@@ -146,26 +160,26 @@
                         {
                             List<QuadTree> quadTrees = displayedGraph.QuadTree.GetAllLeaves();
 
-                            @if (configuration.GetValue<bool>("ShowQuadTree"))
-                            {
-                                <Layer LayerType="LayerType.Vector" SourceType="SourceType.Vector">
-                                    <Shapes>
+                            <Layer LayerType="LayerType.Vector" SourceType="SourceType.Vector">
+                                <Shapes>
+                                    @if (configuration.GetValue<bool>("ShowQuadTree"))
+                                    {
                                         @foreach (var quadTree in quadTrees)
                                         {
-                                            <Polygon Points="@([
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     new(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                             new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y1),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                      new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y2),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                      new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y2),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                      new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ])"
+                                            List<OpenLayers.Blazor.Coordinate> points = [
+                                                new(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1),
+                                                new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y1),
+                                                new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y2),
+                                                new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y2),
+                                                new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1)];
+                                            <Polygon Points="points"
                                                      Fill="#0000"
                                                      Stroke="#0001"
                                                      StrokeThickness="2" />
                                         }
-                                    </Shapes>
-                                </Layer>
-                            }
+                                    }
+                                </Shapes>
+                            </Layer>
                         }
                     </Layers>
                 </Map>
@@ -326,6 +340,27 @@
             Start = field.Start.ToDateTime(TimeOnly.MinValue);
             End = field.End.ToDateTime(TimeOnly.MaxValue);
         }
+    }
+
+    private string GetPrimaryColorString()
+    {
+        var theme = new MudTheme();
+        string primaryHex = theme.PaletteLight.Primary.ToString();
+        return primaryHex;
+    }
+
+    private string GetTextColorString()
+    {
+        var theme = new MudTheme();
+        string primaryHex = theme.PaletteLight.White.ToString();
+        return primaryHex;
+    }
+
+    private string GetBlackColorString()
+    {
+        var theme = new MudTheme();
+        string primaryHex = theme.PaletteLight.Black.ToString();
+        return primaryHex;
     }
 
     private void OnRangeChanged(IRange<DateOnly> newValue)
