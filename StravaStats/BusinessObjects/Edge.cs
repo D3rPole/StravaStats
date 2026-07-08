@@ -210,10 +210,16 @@ public class Edge
     {
         Coordinate start = EdgeKey.StartNodeKey;
         Coordinate end = EdgeKey.EndNodeKey;
-        Coordinate delta = end - start;
-        delta.Normalize();
-        Coordinate north = new Coordinate(1,0);
-        return delta.DotProduct(north);
+
+        double dx = end.Latitude - start.Latitude;
+        double dy = end.Longitude - start.Longitude;
+
+        double radians = Math.Atan2(dy, dx);
+        double degrees = radians * (180.0 / Math.PI);
+
+        if (degrees < 0) degrees += 360.0;
+
+        return degrees;
     }
 
     public OpenLayers.Blazor.Coordinate GetCenter(Graph graph)

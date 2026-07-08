@@ -26,8 +26,8 @@ namespace StravaStats.Services
                     account.AccountDirectory = accountDir;
                     await stravaService.DownloadActivities(account, accountActivitiesPath);
                     account.Activities = await activityService.GetActivities(accountActivitiesPath);
-                    await account.BuildGraphs();
                     Accounts.Add(account);
+                    await account.BuildGraphs();
                 });
                 tasks.Add(task);
             }
