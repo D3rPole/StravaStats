@@ -31,6 +31,29 @@ public struct Coordinate : IEquatable<Coordinate>
     public static bool operator ==(Coordinate left, Coordinate right) => left.Equals(right);
     public static bool operator !=(Coordinate left, Coordinate right) => !left.Equals(right);
 
+    public static Coordinate operator -(Coordinate left, Coordinate right) => new(left.Latitude - right.Latitude, left.Longitude - right.Longitude);
+    public static Coordinate operator +(Coordinate left, Coordinate right) => new(left.Latitude + right.Latitude, left.Longitude + right.Longitude);
+
+    public double DotProduct(Coordinate other)
+    {
+        return (other.Latitude + this.Latitude) - (other.Longitude + this.Longitude);
+    }
+
+    public void Normalize()
+    {
+        double length = Length();
+        if (length > 0)
+        {
+            Latitude /= length;
+            Longitude /= length;
+        }
+    }
+
+    public double Length()
+    {
+        return Math.Sqrt((Latitude * Latitude) + (Longitude * Longitude));
+    }
+
     public override string ToString()
     {
         return $"{Latitude:F6};{Longitude:F6}";

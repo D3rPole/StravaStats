@@ -501,13 +501,17 @@
         var edges = targetGraph.Edges.Values
                     .Select(e =>
                     {
+                        var d = e.GetDirection();
+                        var start = new[] { targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Longitude + (e.GetDirection() < 0 ? -0.0001 : 0.0001), targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Latitude };
+                        var end = new[] { targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Longitude + (e.GetDirection() < 0 ? -0.0001 : 0.0001), targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Latitude };
+
                         BusinessObjects.Color color = new();
                         if (e.ActivityIds.Any(id => SelectedActivities.Any(a => a.ActivityHeader.Id == id)))
                         {
                             return new
                             {
-                                start = new[] { targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Longitude, targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Latitude },
-                                end = new[] { targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Longitude, targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Latitude },
+                                start = start,
+                                end = end,
                                 color = "#0f0"
                             };
                         }
@@ -546,8 +550,8 @@
                         string colorString = $"rgba({color.R},{color.G},{color.B},1)";
                         return new
                         {
-                            start = new[] { targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Longitude, targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Latitude },
-                            end = new[] { targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Longitude, targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Latitude },
+                            start = start,
+                            end = end,
                             color = colorString
                         };
                     }).ToList();

@@ -123,8 +123,7 @@ public struct EdgeKey : IEquatable<EdgeKey>
 
     public bool Equals(EdgeKey other)
     {
-        return (StartNodeKey.Equals(other.StartNodeKey) && EndNodeKey.Equals(other.EndNodeKey)) ||
-               (StartNodeKey.Equals(other.EndNodeKey) && EndNodeKey.Equals(other.StartNodeKey));
+        return (StartNodeKey.Equals(other.StartNodeKey) && EndNodeKey.Equals(other.EndNodeKey));
     }
 
     public override bool Equals(object? obj)
@@ -134,10 +133,7 @@ public struct EdgeKey : IEquatable<EdgeKey>
 
     public override int GetHashCode()
     {
-        int h1 = StartNodeKey.GetHashCode();
-        int h2 = EndNodeKey.GetHashCode();
-
-        return h1 ^ h2;
+        return HashCode.Combine(StartNodeKey, EndNodeKey);
     }
 
     public static bool operator ==(EdgeKey left, EdgeKey right) => left.Equals(right);
@@ -208,6 +204,16 @@ public class Edge
         Node closestPointOnSegment = new Node(closestLat, closestLon);
 
         return GeoUtils.CalculateDistance(node, closestPointOnSegment);
+    }
+
+    public double GetDirection()
+    {
+        Coordinate start = EdgeKey.StartNodeKey;
+        Coordinate end = EdgeKey.EndNodeKey;
+        Coordinate delta = end - start;
+        delta.Normalize();
+        Coordinate north = new Coordinate(1,0);
+        return delta.DotProduct(north);
     }
 
     public OpenLayers.Blazor.Coordinate GetCenter(Graph graph)
