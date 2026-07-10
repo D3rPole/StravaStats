@@ -71,15 +71,18 @@
                 <MudIconButton OnClick="@(() => SelectGrade(GradeSelection.All))"
                                Icon="@(gradeSelection == GradeSelection.All ? Components.Icons.ArrowUpRightSquare : Components.Icons.ArrowDownRightSquareFill)"
                                Color="MudBlazor.Color.Primary"
-                               Size="Size.Large" />
+                               Size="Size.Large"
+                               Disabled="@(selectedAccount is null)" />
                 <MudIconButton OnClick="@(() => SelectGrade(GradeSelection.Uphill))"
                                Icon="@(gradeSelection == GradeSelection.Uphill ? Components.Icons.ArrowUpRightSquare : Components.Icons.ArrowDownRightSquareFill)"
                                Color="MudBlazor.Color.Primary"
-                               Size="Size.Large" />
+                               Size="Size.Large"
+                               Disabled="@(selectedAccount is null)" />
                 <MudIconButton OnClick="@(() => SelectGrade(GradeSelection.Downhill))"
                                Icon="@(gradeSelection == GradeSelection.Downhill ? Components.Icons.ArrowDownRightSquare : Components.Icons.ArrowUpRightSquareFill)"
                                Color="MudBlazor.Color.Primary"
-                               Size="Size.Large" />
+                               Size="Size.Large"
+                               Disabled="@(selectedAccount is null)" />
             </div>
         </div>
     </MudCard>

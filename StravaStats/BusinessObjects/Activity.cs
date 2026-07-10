@@ -42,7 +42,16 @@ namespace StravaStats.BusinessObjects
                 if (rawActivity.Velocity is not null)
                     trackingPoint.VelocitySmooth = ((JsonElement)rawActivity.Velocity.Data[i]).GetDouble();
                 if (rawActivity.Grade is not null)
-                    trackingPoint.Grade = ((JsonElement)rawActivity.Grade.Data[i]).GetDouble();
+                {
+                    if (trackingPoint.VelocitySmooth < 0.8)
+                    {
+                        trackingPoint.Grade = 0;
+                    }
+                    else
+                    {
+                        trackingPoint.Grade = ((JsonElement)rawActivity.Grade.Data[i]).GetDouble();
+                    }
+                }
                 if (rawActivity.LatLng is not null)
                 {
                     var obj = (JsonElement)rawActivity.LatLng.Data[i];
