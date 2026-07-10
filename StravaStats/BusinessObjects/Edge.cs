@@ -3,111 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects;
 
-public class MetricSummary
-{
-    [JsonIgnore]
-    public double MaxValue => maxValue == double.MinValue ? 0 : maxValue;
-
-    [JsonIgnore]
-    public double MinValue => minValue == double.MaxValue ? 0 : minValue;
-
-    [JsonIgnore]
-    public double Average => count == 0 ? 0 : totalValue / count;
-
-    [JsonInclude]
-    private double maxValue = double.MinValue;
-    public Coordinate MaxPosition { get; set; }
-
-    [JsonInclude]
-    private double minValue = double.MaxValue;
-    public Coordinate MinPosition { get; set; }
-
-    [JsonInclude]
-    private double totalValue { get; set; }
-    [JsonInclude]
-    private int count { get; set; }
-    public void AddMetric(double? value, Coordinate position)
-    {
-        if (value is null) return;
-        count++;
-        totalValue += value.Value;
-        if (maxValue < value.Value)
-        {
-            maxValue = value.Value;
-            MaxPosition = position;
-        }
-        if (minValue > value.Value)
-        {
-            minValue = value.Value;
-            MinPosition = position;
-        }
-    }
-
-    public void AddMetric(MetricSummary metric)
-    {
-        if (metric is null) return;
-        count += metric.count;
-        totalValue += metric.totalValue;
-        if (maxValue < metric.maxValue)
-        {
-            maxValue = metric.maxValue;
-            MaxPosition = metric.MaxPosition;
-        }
-        if (minValue > metric.minValue)
-        {
-            minValue = metric.minValue;
-            MinPosition = metric.MinPosition;
-        }
-    }
-}
-public class Metrics
-{
-    public MetricSummary HeartRate { get; set; } = new();
-    public MetricSummary Speed { get; set; } = new();
-    public MetricSummary Grade { get; set; } = new();
-    public MetricSummary Wattage { get; set; } = new();
-    public MetricSummary Acceleration { get; set; } = new();
-
-    public Metrics AddDataPoint(TrackingPoint trackingPoint)
-    {
-        HeartRate.AddMetric(trackingPoint.HeartRate, trackingPoint.Coordinate);
-        Speed.AddMetric(trackingPoint.SpeedKmh, trackingPoint.Coordinate);
-        Grade.AddMetric(trackingPoint.Grade, trackingPoint.Coordinate);
-        Wattage.AddMetric(trackingPoint.Watt, trackingPoint.Coordinate);
-        Acceleration.AddMetric(trackingPoint.Acceleration, trackingPoint.Coordinate);
-        return this;
-    }
-
-    public Metrics AddEdge(Edge edge)
-    {
-        HeartRate.AddMetric(edge.Metrics.HeartRate);
-        Speed.AddMetric(edge.Metrics.Speed);
-        Grade.AddMetric(edge.Metrics.Grade);
-        Wattage.AddMetric(edge.Metrics.Wattage);
-        Acceleration.AddMetric(edge.Metrics.Acceleration);
-        return this;
-    }
-
-    public Metrics AddMetrics(Metrics metrics)
-    {
-        HeartRate.AddMetric(metrics.HeartRate);
-        Speed.AddMetric(metrics.Speed);
-        Grade.AddMetric(metrics.Grade);
-        Wattage.AddMetric(metrics.Wattage);
-        Acceleration.AddMetric(metrics.Acceleration);
-        return this;
-    }
-
-    public Metrics AddMetrics(IEnumerable<Metrics> metricsList)
-    {
-        foreach(var metrics in metricsList)
-        {
-            AddMetrics(metrics);
-        }
-        return this;
-    }
-}
-
 public struct EdgeKey : IEquatable<EdgeKey>
 {
     public Coordinate StartNodeKey { get; set; }
@@ -123,7 +18,8 @@ public struct EdgeKey : IEquatable<EdgeKey>
 
     public bool Equals(EdgeKey other)
     {
-        return (StartNodeKey.Equals(other.StartNodeKey) && EndNodeKey.Equals(other.EndNodeKey));
+        return (StartNodeKey.Equals(other.StartNodeKey) && EndNodeKey.Equals(other.EndNodeKey))
+            || (StartNodeKey.Equals(other.EndNodeKey) && EndNodeKey.Equals(other.StartNodeKey));
     }
 
     public override bool Equals(object? obj)
@@ -133,7 +29,12 @@ public struct EdgeKey : IEquatable<EdgeKey>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(StartNodeKey, EndNodeKey);
+        return StartNodeKey.GetHashCode() ^ EndNodeKey.GetHashCode();
+    }
+
+    public double GetDirection()
+    {
+        return StartNodeKey.GetDirection(new Coordinate(1,0));
     }
 
     public static bool operator ==(EdgeKey left, EdgeKey right) => left.Equals(right);
@@ -162,17 +63,30 @@ public class Edge
 {
     public EdgeKey EdgeKey { get; set; }
     public HashSet<long> ActivityIds { get; set; } = new();
-    public Metrics Metrics { get; set; } = new();
+    public Metrics AllMetrics { get; set; } = new();
+    public Metrics UphillMetrics { get; set; } = new();
+    public Metrics DownhillMetrics { get; set; } = new();
 
-    public void AddDataPoint(TrackingPoint trackingPoint)
+    public void AddDataPoint(TrackingPoint previousPoint, TrackingPoint trackingPoint)
     {
-        Metrics.AddDataPoint(trackingPoint);
+        var dir = previousPoint.Coordinate.GetDirection(trackingPoint.Coordinate);
+        AllMetrics.AddDataPoint(trackingPoint);
+        if (trackingPoint.Grade > 0) // Split be east and west direction
+        {
+            UphillMetrics.AddDataPoint(trackingPoint);
+        }
+        else
+        {
+            DownhillMetrics.AddDataPoint(trackingPoint);
+        }
     }
 
     public void AddEdge(Edge edge)
     {
         ActivityIds.UnionWith(edge.ActivityIds);
-        Metrics.AddEdge(edge);
+        AllMetrics.AddMetrics(edge.AllMetrics);
+        UphillMetrics.AddMetrics(edge.UphillMetrics);
+        DownhillMetrics.AddMetrics(edge.DownhillMetrics);
     }
 
     public double DistanceToPoint(Node node, Dictionary<Coordinate, Node> nodes)
@@ -204,22 +118,6 @@ public class Edge
         Node closestPointOnSegment = new Node(closestLat, closestLon);
 
         return GeoUtils.CalculateDistance(node, closestPointOnSegment);
-    }
-
-    public double GetDirection()
-    {
-        Coordinate start = EdgeKey.StartNodeKey;
-        Coordinate end = EdgeKey.EndNodeKey;
-
-        double dx = end.Latitude - start.Latitude;
-        double dy = end.Longitude - start.Longitude;
-
-        double radians = Math.Atan2(dy, dx);
-        double degrees = radians * (180.0 / Math.PI);
-
-        if (degrees < 0) degrees += 360.0;
-
-        return degrees;
     }
 
     public OpenLayers.Blazor.Coordinate GetCenter(Graph graph)

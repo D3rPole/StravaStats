@@ -114,30 +114,28 @@ namespace StravaStats.BusinessObjects
             }
         }
 
-        public Edge? GetClosestEdge(double lat, double lon, double? direction, Dictionary<Coordinate, Node> nodes)
+        public Edge? GetClosestEdge(double lat, double lon, Dictionary<Coordinate, Node> nodes)
         {
             if (isSplit)
             {
                 if (UpperLeft?.BoundingBox.ContainsCoords(lat, lon) == true)
-                    return UpperLeft.GetClosestEdge(lat, lon, direction, nodes);
+                    return UpperLeft.GetClosestEdge(lat, lon, nodes);
                 if (UpperRight?.BoundingBox.ContainsCoords(lat, lon) == true)
-                    return UpperRight.GetClosestEdge(lat, lon, direction, nodes);
+                    return UpperRight.GetClosestEdge(lat, lon, nodes);
                 if (DownLeft?.BoundingBox.ContainsCoords(lat, lon) == true)
-                    return DownLeft.GetClosestEdge(lat, lon, direction, nodes);
+                    return DownLeft.GetClosestEdge(lat, lon, nodes);
                 if (DownRight?.BoundingBox.ContainsCoords(lat, lon) == true)
-                    return DownRight.GetClosestEdge(lat, lon, direction, nodes);
+                    return DownRight.GetClosestEdge(lat, lon, nodes);
                 return new[] { UpperLeft, UpperRight, DownLeft, DownRight }
                     .Where(q => q is not null)
                     .SelectMany(q => q!.GetLeafEdges(lat, lon, nodes))
                     .OrderBy(e => e.DistanceToPoint(new Node(lat, lon), nodes))
-                    .Where(e => direction is null || Math.Abs(e.GetDirection() - direction.Value) < 90)
                     .FirstOrDefault();
             }
             else
             {
                 return Edges
                     .OrderBy(e => e.DistanceToPoint(new Node(lat, lon), nodes))
-                    .Where(e => direction is null || Math.Abs(e.GetDirection() - direction.Value) < 90)
                     .FirstOrDefault();
             }
         }

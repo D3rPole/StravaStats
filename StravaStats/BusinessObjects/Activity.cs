@@ -33,8 +33,6 @@ namespace StravaStats.BusinessObjects
                     trackingPoint.Time = ((JsonElement)rawActivity.Time.Data[i]).GetInt32();
                 if (rawActivity.HeartRate is not null)
                     trackingPoint.HeartRate = ((JsonElement)rawActivity.HeartRate.Data[i]).GetDouble();
-                if (rawActivity.Grade is not null)
-                    trackingPoint.Grade = ((JsonElement)rawActivity.Grade.Data[i]).GetDouble();
                 if (rawActivity.Moving is not null)
                     trackingPoint.Moving = ((JsonElement)rawActivity.Moving.Data[i]).GetBoolean();
                 if (rawActivity.Altitude is not null)
@@ -43,6 +41,8 @@ namespace StravaStats.BusinessObjects
                     trackingPoint.Time = ((JsonElement)rawActivity.Time.Data[i]).GetInt32();
                 if (rawActivity.Velocity is not null)
                     trackingPoint.VelocitySmooth = ((JsonElement)rawActivity.Velocity.Data[i]).GetDouble();
+                if (rawActivity.Grade is not null)
+                    trackingPoint.Grade = ((JsonElement)rawActivity.Grade.Data[i]).GetDouble();
                 if (rawActivity.LatLng is not null)
                 {
                     var obj = (JsonElement)rawActivity.LatLng.Data[i];
@@ -52,6 +52,8 @@ namespace StravaStats.BusinessObjects
                     if (obj[1] is JsonElement lon)
                         trackingPoint.Longitude = lon.GetDouble();
                 }
+
+
                 if (rawActivity.Velocity is not null && rawActivity.Time is not null)
                 {
                     if (i > 0)
@@ -90,7 +92,26 @@ namespace StravaStats.BusinessObjects
                 TrackingPoints.Add(trackingPoint);
             }
 
-            const int range = 5;
+            const int range = 10;
+
+            var window = new Queue<double>();
+
+            for (int i = 0; i < TrackingPoints.Count; i++)
+            {
+                var trackingPoint = TrackingPoints[i];
+                if (trackingPoint.Grade is null)
+                {
+                    window.Clear();
+                    continue;
+                }
+                window.Enqueue(trackingPoint.Grade.Value);
+                if (window.Count > range)
+                {
+                    window.Dequeue();
+                }
+
+                trackingPoint.Grade = window.Average();
+            }
 
             for (int i = 1; i < TrackingPoints.Count; i++)
             {

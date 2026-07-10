@@ -28,6 +28,19 @@ public struct Coordinate : IEquatable<Coordinate>
         return HashCode.Combine(Latitude, Longitude);
     }
 
+    public double GetDirection(Coordinate other)
+    {
+        double dx = other.Latitude - this.Latitude;
+        double dy = other.Longitude - this.Longitude;
+
+        double radians = Math.Atan2(dy, dx);
+        double degrees = radians * (180.0 / Math.PI);
+
+        if (degrees < 0) degrees += 360.0;
+
+        return degrees;
+    }
+
     public static bool operator ==(Coordinate left, Coordinate right) => left.Equals(right);
     public static bool operator !=(Coordinate left, Coordinate right) => !left.Equals(right);
 

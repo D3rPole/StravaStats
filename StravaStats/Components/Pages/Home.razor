@@ -66,6 +66,21 @@
                 <MudSelectItem Value="@("""https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png""")">Darkmode</MudSelectItem>
                 <MudSelectItem Value="@("""https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg""")">Satelite</MudSelectItem>
             </MudSelect>
+
+            <div class="d-flex align-content-center">
+                <MudIconButton OnClick="@(() => SelectGrade(GradeSelection.All))"
+                               Icon="@(gradeSelection == GradeSelection.All ? Components.Icons.ArrowUpRightSquare : Components.Icons.ArrowDownRightSquareFill)"
+                               Color="MudBlazor.Color.Primary"
+                               Size="Size.Large" />
+                <MudIconButton OnClick="@(() => SelectGrade(GradeSelection.Uphill))"
+                               Icon="@(gradeSelection == GradeSelection.Uphill ? Components.Icons.ArrowUpRightSquare : Components.Icons.ArrowDownRightSquareFill)"
+                               Color="MudBlazor.Color.Primary"
+                               Size="Size.Large" />
+                <MudIconButton OnClick="@(() => SelectGrade(GradeSelection.Downhill))"
+                               Icon="@(gradeSelection == GradeSelection.Downhill ? Components.Icons.ArrowDownRightSquare : Components.Icons.ArrowUpRightSquareFill)"
+                               Color="MudBlazor.Color.Primary"
+                               Size="Size.Large" />
+            </div>
         </div>
     </MudCard>
     <div class="d-inline-flex" style="width:100%;">
@@ -77,7 +92,7 @@
             <MudCard Class="@("stats-overlay" + (statsExpanded ? " enabled" : ""))">
                 <MudButton OnClick="StatsExpandClicked" Class="d-flex" Disabled="@(displayedGraph is null || displayedGraph.Edges.Count() == 0)">
                     <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.h6">Stats</MudText>
-                    <MudIcon Icon="@(statsExpanded ? Icons.Material.Filled.ArrowDropUp : Icons.Material.Filled.ArrowDropDown)" />
+                    <MudIcon Icon="@(statsExpanded ? MudBlazor.Icons.Material.Filled.ArrowDropUp : MudBlazor.Icons.Material.Filled.ArrowDropDown)" />
                 </MudButton>
                 <MudCollapse Expanded="@(statsExpanded)">
                     @if (selectedMetrics is not null)
@@ -90,6 +105,7 @@
                         <MudText Typo="Typo.body1">Max Wattage: @($"{selectedMetrics.Wattage.MaxValue:F2}") W</MudText>
                         <MudText Typo="Typo.body1">Max Heartrate: @($"{selectedMetrics.HeartRate.MaxValue:F2}") BPM</MudText>
                         <MudText Typo="Typo.body1">Max Grade: @($"{selectedMetrics.Grade.MaxValue:F2}") %</MudText>
+                        <MudText Typo="Typo.body1">Min Grade: @($"{selectedMetrics.Grade.MinValue:F2}") %</MudText>
                         <MudDivider Class="ma-2" />
                         <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.body2">Averages</MudText>
                         <MudDivider Class="ma-2" />
@@ -114,10 +130,11 @@
                         {
                             <Marker Fill="@GetPrimaryColorString()"
                                     Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()" Type="MarkerType.MarkerFlag"
+                                    TextColor="@GetTextColorString()"
                                     Coordinate="popupCoordinate.Value"
                                     Text="@popupContent"
                                     Popup
+                                    Type="MarkerType.MarkerFlag"
                                     @key="markerKey">
                             </Marker>
                         }
@@ -126,30 +143,51 @@
                             <Marker Fill="@GetPrimaryColorString()"
                                     Stroke="@GetBlackColorString()"
                                     TextColor="@GetTextColorString()"
-                                    Type="MarkerType.MarkerFlag"
                                     Coordinate="@(selectedMetrics.Speed.MaxPosition.ToOpenLayersCoordinate())"
-                                    Text="@($"Max Speed: {selectedMetrics.Speed.MaxValue:F2} km/h")" />
+                                    Popup
+                                    Type="MarkerType.MarkerFlag"
+                                    Text="@($"Max Speed: {selectedMetrics.Speed.MaxValue:F2} km/h")"
+                                    @key="@("speed-" + selectedMetrics.GetHashCode())" />
                             <Marker Fill="@GetPrimaryColorString()"
                                     Stroke="@GetBlackColorString()"
                                     TextColor="@GetTextColorString()"
-                                    Type="MarkerType.MarkerFlag"
                                     Coordinate="@(selectedMetrics.Acceleration.MaxPosition.ToOpenLayersCoordinate())"
-                                    Text="@($"Max Acceleration: {selectedMetrics.Acceleration.MaxValue:F2} m/s²")" />
+                                    Popup
+                                    Type="MarkerType.MarkerFlag"
+                                    Text="@($"Max Acceleration: {selectedMetrics.Acceleration.MaxValue:F2} m/s²")"
+                                    @key="@("acceleration-" + selectedMetrics.GetHashCode())" />
                             <Marker Fill="@GetPrimaryColorString()"
                                     Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()" Type="MarkerType.MarkerFlag"
+                                    TextColor="@GetTextColorString()"
                                     Coordinate="@(selectedMetrics.HeartRate.MaxPosition.ToOpenLayersCoordinate())"
-                                    Text="@($"Max Heartrate: {selectedMetrics.HeartRate.MaxValue:F2} bpm")" />
+                                    Popup
+                                    Type="MarkerType.MarkerFlag"
+                                    Text="@($"Max Heartrate: {selectedMetrics.HeartRate.MaxValue:F2} bpm")"
+                                    @key="@("heartrate-" + selectedMetrics.GetHashCode())" />
                             <Marker Fill="@GetPrimaryColorString()"
                                     Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()" Type="MarkerType.MarkerFlag"
+                                    TextColor="@GetTextColorString()"
                                     Coordinate="@(selectedMetrics.Grade.MaxPosition.ToOpenLayersCoordinate())"
-                                    Text="@($"Max Geade: {(selectedMetrics.Grade.MaxValue):F2} %")" />
+                                    Popup
+                                    Type="MarkerType.MarkerFlag"
+                                    Text="@($"Max Grade: {(selectedMetrics.Grade.MaxValue):F2} %")"
+                                    @key="@("mac-grade-" + selectedMetrics.GetHashCode())" />
                             <Marker Fill="@GetPrimaryColorString()"
                                     Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()" Type="MarkerType.MarkerFlag"
+                                    TextColor="@GetTextColorString()"
+                                    Coordinate="@(selectedMetrics.Grade.MinPosition.ToOpenLayersCoordinate())"
+                                    Popup
+                                    Type="MarkerType.MarkerFlag"
+                                    Text="@($"Min Grade: {(selectedMetrics.Grade.MinValue):F2} %")"
+                                    @key="@("min-grade-" + selectedMetrics.GetHashCode())" />
+                            <Marker Fill="@GetPrimaryColorString()"
+                                    Stroke="@GetBlackColorString()"
+                                    TextColor="@GetTextColorString()"
                                     Coordinate="@(selectedMetrics.Wattage.MaxPosition.ToOpenLayersCoordinate())"
-                                    Text="@($"Max Wattage: {selectedMetrics.Wattage.MaxValue:F2} W")" />
+                                    Popup
+                                    Type="MarkerType.MarkerFlag"
+                                    Text="@($"Max Wattage: {selectedMetrics.Wattage.MaxValue:F2} W")"
+                                    @key="@("wattage-" + selectedMetrics.GetHashCode())" />
                         }
                     </Features>
                     <Layers>
@@ -189,7 +227,7 @@
                 <MudCard Class="activities-list">
                     <MudButton OnClick="ListExpandClicked" Class="d-flex" Disabled="@(selectedAccount is null || selectedAccount.SelectedActivities is null)">
                         <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.h6">Activities</MudText>
-                        <MudIcon Icon="@(listExpanded ? Icons.Material.Filled.ArrowDropUp : Icons.Material.Filled.ArrowDropDown)" />
+                        <MudIcon Icon="@(listExpanded ? MudBlazor.Icons.Material.Filled.ArrowDropUp : MudBlazor.Icons.Material.Filled.ArrowDropDown)" />
                     </MudButton>
                     <MudCollapse Expanded="@(listExpanded)">
                         <MudDivider />
@@ -212,7 +250,7 @@
                                         <CellTemplate>
                                             @if (popupActivities is not null && popupActivities.Contains(context.Item.ActivityHeader.Id))
                                             {
-                                                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="MudBlazor.Color.Primary" />
+                                                <MudIcon Icon="@MudBlazor.Icons.Material.Filled.LocationOn" Color="MudBlazor.Color.Primary" />
                                             }
                                         </CellTemplate>
                                     </TemplateColumn>
@@ -233,6 +271,14 @@
 </div>
 
 @code {
+    private void SelectGrade(GradeSelection gradeSelection)
+    {
+        this.gradeSelection = gradeSelection;
+        SetSelectedMetrics();
+        UpdateDisplayedGraph();
+        StateHasChanged();
+    }
+    GradeSelection gradeSelection = GradeSelection.All;
     HashSet<Activity> SelectedActivities
     {
         get => field;
@@ -245,14 +291,47 @@
                 UpdateDisplayedGraph();
                 return;
             }
-            if (field is null || field.Count() == 0)
-                selectedMetrics = selectedAccount.SelectedGraph.Metrics;
-            else
-                selectedMetrics = selectedAccount.GetGraphByActivities(field.Select(a => a.ActivityHeader.Id)).Metrics;
-
+            SetSelectedMetrics();
             UpdateDisplayedGraph();
         }
     } = [];
+    private void SetSelectedMetrics()
+    {
+        if (selectedAccount is null || selectedAccount.SelectedGraph is null)
+            return;
+        if (SelectedActivities is not null && SelectedActivities.Count > 0)
+        {
+            selectedMetrics = new Metrics();
+            foreach (var activity in SelectedActivities)
+            {
+                switch (gradeSelection)
+                {
+                    case GradeSelection.All:
+                        selectedMetrics.AddMetrics(activity.Graph.AllMetrics);
+                        break;
+                    case GradeSelection.Uphill:
+                        selectedMetrics.AddMetrics(activity.Graph.UphillMetrics);
+                        break;
+                    case GradeSelection.Downhill:
+                        selectedMetrics.AddMetrics(activity.Graph.DownhillMetrics);
+                        break;
+                }
+            }
+            return;
+        }
+        switch (gradeSelection)
+        {
+            case GradeSelection.All:
+                selectedMetrics = selectedAccount.SelectedGraph.AllMetrics;
+                break;
+            case GradeSelection.Uphill:
+                selectedMetrics = selectedAccount.SelectedGraph.UphillMetrics;
+                break;
+            case GradeSelection.Downhill:
+                selectedMetrics = selectedAccount.SelectedGraph.DownhillMetrics;
+                break;
+        }
+    }
     Metrics selectedMetrics;
     Action UpdateGraphAction;
     private bool isLoading;
@@ -400,7 +479,7 @@
             return;
         Start = new(DateOnly.FromDateTime(selectedAccount.StartDateRange), TimeOnly.MinValue);
         End = new(DateOnly.FromDateTime(selectedAccount.EndDateRange), TimeOnly.MaxValue);
-        selectedMetrics = selectedAccount.SelectedGraph.Metrics;
+        SetSelectedMetrics();
         SelectedActivities = [];
         _sizeRange = dateRange;
         UpdateDisplayedGraph();
@@ -431,7 +510,7 @@
 
         Start = new(DateOnly.FromDateTime(selectedAccount.StartDateRange), TimeOnly.MinValue);
         End = new(DateOnly.FromDateTime(selectedAccount.EndDateRange), TimeOnly.MaxValue);
-        selectedMetrics = selectedAccount.SelectedGraph.Metrics;
+        SetSelectedMetrics();
         _sizeRange = dateRange;
     }
 
@@ -467,13 +546,29 @@
 
         markerKey = Guid.NewGuid();
         popupCoordinate = center;
+        Metrics metrics;
+        switch (gradeSelection)
+        {
+            case GradeSelection.All:
+                metrics = edge.AllMetrics;
+                break;
+            case GradeSelection.Uphill:
+                metrics = edge.UphillMetrics;
+                break;
+            case GradeSelection.Downhill:
+                metrics = edge.DownhillMetrics;
+                break;
+            default:
+                metrics = edge.AllMetrics;
+                break;
+        }
         popupContent = $"Total Activities: {edge.ActivityIds.Count}\n" +
-                        $"Average Heartrate: {edge.Metrics.HeartRate.Average:F2} BPM\n" +
-                        $"Grade: {edge.Metrics.Grade.Average:F2} %\n" +
-                        $"Average Speed: {edge.Metrics.Speed.Average:F2} Km/h\n" +
-                        $"Average Acceleration: {edge.Metrics.Acceleration.Average:F2} m/s²\n" +
-                        $"Max Acceleration: {edge.Metrics.Acceleration.MaxValue:F2} m/s²\n" +
-                        $"Average Wattage: {edge.Metrics.Wattage.Average:F2} W\n";
+                        $"Average Heartrate: {metrics.HeartRate.Average:F2} BPM\n" +
+                        $"Grade: {metrics.Grade.Average:F2} %\n" +
+                        $"Average Speed: {metrics.Speed.Average:F2} Km/h\n" +
+                        $"Average Acceleration: {metrics.Acceleration.Average:F2} m/s²\n" +
+                        $"Max Acceleration: {metrics.Acceleration.MaxValue:F2} m/s²\n" +
+                        $"Average Wattage: {metrics.Wattage.Average:F2} W\n";
 
         popupActivities = edge.ActivityIds;
 
@@ -489,8 +584,6 @@
     {
         if (graph is null)
             return;
-        if (displayedGraph == graph)
-            return;
 
         displayedGraph = graph;
         await RenderEdgesViaJS(displayedGraph);
@@ -501,9 +594,8 @@
         var edges = targetGraph.Edges.Values
                     .Select(e =>
                     {
-                        var dir = e.GetDirection();
-                        var start = new[] { targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Longitude + (dir < 180 ? -0.0001 : 0.0001), targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Latitude };
-                        var end = new[] { targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Longitude + (dir < 180 ? -0.0001 : 0.0001), targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Latitude };
+                        var start = new[] { targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Longitude, targetGraph.Nodes[e.EdgeKey.StartNodeKey].Coordinate.Latitude };
+                        var end = new[] { targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Longitude, targetGraph.Nodes[e.EdgeKey.EndNodeKey].Coordinate.Latitude };
 
                         BusinessObjects.Color color = new();
                         if (e.ActivityIds.Any(id => SelectedActivities.Any(a => a.ActivityHeader.Id == id)))
@@ -516,25 +608,41 @@
                             };
                         }
                         float value = 0;
+                        Metrics metrics;
+                        switch (gradeSelection)
+                        {
+                            case GradeSelection.All:
+                                metrics = e.AllMetrics;
+                                break;
+                            case GradeSelection.Uphill:
+                                metrics = e.UphillMetrics;
+                                break;
+                            case GradeSelection.Downhill:
+                                metrics = e.DownhillMetrics;
+                                break;
+                            default:
+                                metrics = e.AllMetrics;
+                                break;
+                        }
                         switch (displayedMetric)
                         {
                             case Metric.Count:
                                 value = e.ActivityIds.Count / 10f;
                                 break;
                             case Metric.Velocity:
-                                value = (float)e.Metrics.Speed.Average / 25f;
+                                value = (float)metrics.Speed.Average / 25f;
                                 break;
                             case Metric.HeartRate:
-                                value = (float)e.Metrics.HeartRate.Average / 150f;
+                                value = (float)metrics.HeartRate.Average / 150f;
                                 break;
                             case Metric.Wattage:
-                                value = (float)e.Metrics.Wattage.Average / 100f;
+                                value = (float)metrics.Wattage.Average / 100f;
                                 break;
                             case Metric.Acceleration:
-                                value = (float)e.Metrics.Acceleration.Average * 2f;
+                                value = (float)metrics.Acceleration.Average * 2f;
                                 break;
                             case Metric.Grade:
-                                value = (float)e.Metrics.Grade.Average / 12f;
+                                value = (float)metrics.Grade.Average / 12f;
                                 break;
                         }
                         float positiveValue = Math.Clamp(value, 0, 2);

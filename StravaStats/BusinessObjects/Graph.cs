@@ -15,7 +15,9 @@ namespace StravaStats.BusinessObjects
         [JsonConverter(typeof(CoordinateDictionaryConverter<Node>))]
         public Dictionary<Coordinate, Node> Nodes { get; set; } = [];
         public QuadTree QuadTree { get; set; }
-        public Metrics Metrics { get; set; } = new();
+        public Metrics AllMetrics { get; set; } = new();
+        public Metrics UphillMetrics { get; set; } = new();
+        public Metrics DownhillMetrics { get; set; } = new();
 
         public Graph() {}
 
@@ -34,7 +36,9 @@ namespace StravaStats.BusinessObjects
                 foreach (var edge in graph.Edges)
                 {
                     Edge e = AddEdge(edge.Value.EdgeKey.StartNodeKey, edge.Value.EdgeKey.EndNodeKey);
-                    Metrics.AddEdge(edge.Value);
+                    AllMetrics.AddMetrics(edge.Value.AllMetrics);
+                    UphillMetrics.AddMetrics(edge.Value.UphillMetrics);
+                    DownhillMetrics.AddMetrics(edge.Value.DownhillMetrics);
                     e?.AddEdge(edge.Value);
                 }
             }
@@ -71,7 +75,7 @@ namespace StravaStats.BusinessObjects
 
                         if (nodeDistance < maxNodeDistance)
                         {
-                            AddUniDirectionalEdge(startNode, endNode);
+                            AddEdge(startNode, endNode);
                         }
                         else
                         {
@@ -85,11 +89,11 @@ namespace StravaStats.BusinessObjects
 
                                 AddNode(newNode);
 
-                                AddUniDirectionalEdge(currentNode, newNode);
+                                AddEdge(currentNode, newNode);
                                 currentNode = newNode;
                             }
 
-                            AddUniDirectionalEdge(currentNode, endNode);
+                            AddEdge(currentNode, endNode);
                         }
                     }
                 }
@@ -104,18 +108,12 @@ namespace StravaStats.BusinessObjects
             {
                 var previousPoint = activity.TrackingPoints[i - 1];
                 var point = activity.TrackingPoints[i];
-                var delta = point.Coordinate - previousPoint.Coordinate;
 
-                double radians = Math.Atan2(delta.Latitude, delta.Longitude);
-                double degrees = radians * (180.0 / Math.PI);
-
-                if (degrees < 0) degrees += 360.0;
-
-                var closestEdge = QuadTree.GetClosestEdge(point.Latitude, point.Longitude, degrees, Nodes);
+                var closestEdge = QuadTree.GetClosestEdge(point.Latitude, point.Longitude, Nodes);
                 if (closestEdge is null)
                     continue;
 
-                closestEdge.AddDataPoint(point);
+                closestEdge.AddDataPoint(previousPoint, point);
                 closestEdge.ActivityIds.Add(activity.ActivityHeader.Id);
             }
         }
@@ -170,16 +168,9 @@ namespace StravaStats.BusinessObjects
             Nodes.Add(node.Coordinate, node);
         }
 
-        public void AddUniDirectionalEdge(Node startNode, Node endNode)
+        public Edge AddEdge(Node startNode, Node endNode)
         {
-            AddEdge(startNode.Coordinate, endNode.Coordinate);
-            AddEdge(endNode.Coordinate, startNode.Coordinate);
-        }
-
-        public void AddUniDirectionalEdge(Coordinate startNodeKey, Coordinate endNodeKey)
-        {
-            AddEdge(startNodeKey, endNodeKey);
-            AddEdge(endNodeKey, startNodeKey);
+            return AddEdge(startNode.Coordinate, endNode.Coordinate);
         }
 
         public Edge AddEdge(Coordinate startNodeKey, Coordinate endNodeKey)
@@ -207,7 +198,6 @@ namespace StravaStats.BusinessObjects
                 AdjacencyList.Add(endNodeKey, new List<Coordinate> { startNodeKey });
 
             return edge;
-
         }
 
         public Edge? GetEdge(Node nodeA, Node nodeB)
@@ -226,7 +216,7 @@ namespace StravaStats.BusinessObjects
 
         public Edge? FindEdge(double lat, double lon)
         {
-            return QuadTree.GetClosestEdge(lat, lon, null, Nodes);
+            return QuadTree.GetClosestEdge(lat, lon, Nodes);
         }
 
         private Coordinate GetNodeKey(PolylinePoint node)
