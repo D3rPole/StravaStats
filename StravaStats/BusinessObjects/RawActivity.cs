@@ -90,6 +90,25 @@ namespace StravaStats.BusinessObjects
 
         [JsonPropertyName("max_heartrate")]
         public double? MaxHeartRate { get; set; }
+
+        [JsonIgnore]
+        public string SportTypeIcon
+        {
+            get
+            {
+                switch (SportType)
+                {
+                    case "Ride":
+                        return MudBlazor.FontIcons.MaterialIcons.Filled.DirectionsBike;
+                    case "Walk":
+                        return MudBlazor.FontIcons.MaterialIcons.Filled.DirectionsWalk;
+                    case "Run":
+                        return MudBlazor.FontIcons.MaterialIcons.Filled.DirectionsRun;
+                    default:
+                        return MudBlazor.FontIcons.MaterialIcons.Filled.FitnessCenter;
+                }
+            }
+        }
     }
 
     public class DataList

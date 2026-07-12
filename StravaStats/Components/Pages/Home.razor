@@ -69,19 +69,19 @@
 
             <div class="d-flex align-content-center">
                 <MudIconButton OnClick="@(() => SelectGrade(GradeSelection.All))"
-                               Icon="@(gradeSelection == GradeSelection.All ? Components.Icons.ArrowUpRightSquare : Components.Icons.ArrowDownRightSquareFill)"
-                               Color="MudBlazor.Color.Primary"
-                               Size="Size.Large"
+                               Icon="@MudBlazor.FontIcons.MaterialIcons.Filled.FilterNone"
+                               Color="@(gradeSelection == GradeSelection.All ? MudBlazor.Color.Primary : MudBlazor.Color.Default)"
+                               Size="Size.Medium"
                                Disabled="@(selectedAccount is null)" />
                 <MudIconButton OnClick="@(() => SelectGrade(GradeSelection.Uphill))"
-                               Icon="@(gradeSelection == GradeSelection.Uphill ? Components.Icons.ArrowUpRightSquare : Components.Icons.ArrowDownRightSquareFill)"
-                               Color="MudBlazor.Color.Primary"
-                               Size="Size.Large"
+                               Icon="@MudBlazor.FontIcons.MaterialIcons.Filled.NorthEast"
+                               Color="@(gradeSelection == GradeSelection.Uphill ? MudBlazor.Color.Primary : MudBlazor.Color.Default)"
+                               Size="Size.Medium"
                                Disabled="@(selectedAccount is null)" />
                 <MudIconButton OnClick="@(() => SelectGrade(GradeSelection.Downhill))"
-                               Icon="@(gradeSelection == GradeSelection.Downhill ? Components.Icons.ArrowDownRightSquare : Components.Icons.ArrowUpRightSquareFill)"
-                               Color="MudBlazor.Color.Primary"
-                               Size="Size.Large"
+                               Icon="@MudBlazor.FontIcons.MaterialIcons.Filled.SouthEast"
+                               Color="@(gradeSelection == GradeSelection.Downhill ? MudBlazor.Color.Primary : MudBlazor.Color.Default)"
+                               Size="Size.Medium"
                                Disabled="@(selectedAccount is null)" />
             </div>
         </div>
@@ -244,19 +244,27 @@
                                             <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.ActivityHeader.Name</MudText>
                                         </CellTemplate>
                                     </TemplateColumn>
+                                    <TemplateColumn Title="Type" Sortable="true" SortBy="x => x.ActivityHeader.SportType">
+                                        <CellTemplate>
+                                            <MudIcon Icon="@context.Item.ActivityHeader.SportTypeIcon" />
+                                        </CellTemplate>
+                                    </TemplateColumn>
                                     <TemplateColumn Title="Distance" Sortable="true" SortBy="x => x.ActivityHeader.Distance">
                                         <CellTemplate>
                                             @($"{context.Item.ActivityHeader.Distance / 1000.0:F2} Km")
                                         </CellTemplate>
                                     </TemplateColumn>
-                                    <TemplateColumn Title="Popup" Sortable="true" SortBy="x => (popupActivities != null && popupActivities.Contains(x.ActivityHeader.Id)) ? 1 : 0">
-                                        <CellTemplate>
-                                            @if (popupActivities is not null && popupActivities.Contains(context.Item.ActivityHeader.Id))
-                                            {
-                                                <MudIcon Icon="@MudBlazor.Icons.Material.Filled.LocationOn" Color="MudBlazor.Color.Primary" />
-                                            }
-                                        </CellTemplate>
-                                    </TemplateColumn>
+                                    @if (popupActivities is not null && popupActivities.Count > 0)
+                                    {
+                                        <TemplateColumn Title="Selected" Sortable="true" SortBy="x => (popupActivities != null && popupActivities.Contains(x.ActivityHeader.Id)) ? 1 : 0">
+                                            <CellTemplate>
+                                                @if (popupActivities is not null && popupActivities.Contains(context.Item.ActivityHeader.Id))
+                                                {
+                                                    <MudIcon Icon="@MudBlazor.Icons.Material.Filled.LocationOn" Color="MudBlazor.Color.Primary" />
+                                                }
+                                            </CellTemplate>
+                                        </TemplateColumn>
+                                    }
                                     <TemplateColumn Title="Date" Sortable="true" SortBy="x => x.ActivityHeader.StartDate">
                                         <CellTemplate>
                                             <MudText Style="text-wrap: nowrap" Typo="Typo.body1">@($"{context.Item.ActivityHeader.StartDate:dd.MM.yyyy}")</MudText>
@@ -269,7 +277,6 @@
                 </MudCard>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -539,6 +546,7 @@
         {
             popupContent = null;
             popupCoordinate = null;
+            popupActivities = null;
             return;
         }
 
@@ -547,6 +555,7 @@
         {
             popupContent = null;
             popupCoordinate = null;
+            popupActivities = null;
             return;
         }
 
