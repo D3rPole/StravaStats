@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using StravaStats.Enums;
+using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
@@ -35,6 +36,7 @@ namespace StravaStats.BusinessObjects
                 }
             }
         }
+
         [JsonIgnore]
         public List<Activity> SelectedActivities { get; set; }
 
@@ -53,11 +55,18 @@ namespace StravaStats.BusinessObjects
         [JsonIgnore]
         public DateTime EndDateRange { get; set; }
 
+        #region Filter
+
         [JsonIgnore]
         public DateTime SelectedStart { get; set; }
 
         [JsonIgnore]
         public DateTime SelectedEnd { get; set; }
+
+        [JsonIgnore]
+        public List<ActivityType> TypeFilter { get; set; }
+
+        #endregion // Filter
 
         public async Task BuildGraphs()
         {
@@ -84,16 +93,24 @@ namespace StravaStats.BusinessObjects
         {
             if (from == SelectedStart && to == SelectedEnd)
                 return;
-            long ticks = DateTime.Now.Ticks;
 
             SelectedStart = from;
             SelectedEnd = to;
-            SelectedActivities = GetActivitiesInRange(from, to);
+            ApplyFilters();
+        }
+
+        public void SelectTypes(List<ActivityType> types)
+        {
+            TypeFilter = types;
+            ApplyFilters();
+        }
+
+        public void ApplyFilters()
+        {
+            SelectedActivities = GetActivitiesInRange(SelectedStart, SelectedEnd);
+            SelectedActivities = SelectedActivities.Where(a => TypeFilter is null || TypeFilter.Count == 0 || TypeFilter.Contains(ActivityType.All) || TypeFilter.Contains(a.ActivityHeader.ActivityType)).ToList();
 
             SelectedGraph = new(SelectedActivities.Select(a => a.Graph).ToList());
-
-            double ms = (double)(DateTime.Now.Ticks - ticks) / TimeSpan.TicksPerMillisecond;
-            Console.WriteLine(Name + $": {ms:F2} ms");
         }
 
         public List<Activity> GetActivitiesInRange(DateTime from, DateTime to)

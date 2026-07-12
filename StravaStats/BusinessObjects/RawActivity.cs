@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using StravaStats.Enums;
+using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
@@ -92,23 +93,7 @@ namespace StravaStats.BusinessObjects
         public double? MaxHeartRate { get; set; }
 
         [JsonIgnore]
-        public string SportTypeIcon
-        {
-            get
-            {
-                switch (SportType)
-                {
-                    case "Ride":
-                        return MudBlazor.FontIcons.MaterialIcons.Filled.DirectionsBike;
-                    case "Walk":
-                        return MudBlazor.FontIcons.MaterialIcons.Filled.DirectionsWalk;
-                    case "Run":
-                        return MudBlazor.FontIcons.MaterialIcons.Filled.DirectionsRun;
-                    default:
-                        return MudBlazor.FontIcons.MaterialIcons.Filled.FitnessCenter;
-                }
-            }
-        }
+        public ActivityType ActivityType => Enums.ActivityTypeExtensions.FromString(Type);
     }
 
     public class DataList

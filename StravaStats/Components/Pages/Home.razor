@@ -84,6 +84,22 @@
                                Size="Size.Medium"
                                Disabled="@(selectedAccount is null)" />
             </div>
+            <MudSelect T="ActivityType"
+                       Label="Activity Type"
+                       SelectedValuesChanged="SelectedActivityTypesFilterChanged"
+                       SelectedValues="@selectedActivityTypes"
+                       Class="pa-2"
+                       MultiSelection="true">
+                @foreach (var activityType in Enum.GetValues<ActivityType>())
+                {
+                    <MudSelectItem Value="@activityType">
+                        <div class="d-flex flex-row">
+                            <MudIcon Class="mr-2" Icon="@activityType.GetIcon()" />
+                            <MudText>@activityType.ToString()</MudText>
+                        </div>
+                    </MudSelectItem>
+                }
+            </MudSelect>
         </div>
     </MudCard>
     <div class="d-inline-flex" style="width:100%;">
@@ -246,7 +262,7 @@
                                     </TemplateColumn>
                                     <TemplateColumn Title="Type" Sortable="true" SortBy="x => x.ActivityHeader.SportType">
                                         <CellTemplate>
-                                            <MudIcon Icon="@context.Item.ActivityHeader.SportTypeIcon" />
+                                            <MudIcon Icon="@context.Item.ActivityHeader.ActivityType.GetIcon()" />
                                         </CellTemplate>
                                     </TemplateColumn>
                                     <TemplateColumn Title="Distance" Sortable="true" SortBy="x => x.ActivityHeader.Distance">
@@ -281,6 +297,33 @@
 </div>
 
 @code {
+    private void SelectedActivityTypesFilterChanged(IReadOnlyCollection<ActivityType>? activityTypes)
+    {
+        if (activityTypes is null || activityTypes.Count == 0)
+        {
+            selectedActivityTypes = [ActivityType.All];
+            return;
+        }
+        List<ActivityType> typeFilter = activityTypes.ToList();
+        if (typeFilter.Contains(ActivityType.All) && !selectedActivityTypes.Contains(ActivityType.All))
+        {
+            selectedActivityTypes = [ActivityType.All];
+            return;
+        }
+
+        if (typeFilter.Count > 1)
+            typeFilter.Remove(ActivityType.All);
+
+        selectedActivityTypes = typeFilter;
+    }
+    List<ActivityType> selectedActivityTypes
+    {
+        get => field; set
+        {
+            field = value; UpdateDisplayedGraph();
+            StateHasChanged();
+        }
+    } = [ActivityType.All];
     private void SelectGrade(GradeSelection gradeSelection)
     {
         this.gradeSelection = gradeSelection;
@@ -722,6 +765,7 @@
             await JS.InvokeVoidAsync("clearMap");
             long ticks = DateTime.Now.Ticks;
             selectedAccount.SelectRange(Start, End);
+            selectedAccount.SelectTypes(selectedActivityTypes);
             long ticksAfter = DateTime.Now.Ticks;
             logger.LogInformation("SelectRange " + (ticksAfter - ticks) / TimeSpan.TicksPerMillisecond + " ms");
             ticks = DateTime.Now.Ticks;
