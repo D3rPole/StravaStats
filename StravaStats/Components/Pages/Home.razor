@@ -300,28 +300,31 @@
     } = [];
     private void SetSelectedMetrics()
     {
-        if (selectedAccount is null || selectedAccount.SelectedGraph is null)
+        if (selectedAccount is null)
             return;
         if (SelectedActivities is not null && SelectedActivities.Count > 0)
         {
-            selectedMetrics = new Metrics();
+            var graph = selectedAccount.GetGraphByActivities(SelectedActivities.Select(a => a.ActivityHeader.Id));
             foreach (var activity in SelectedActivities)
             {
                 switch (gradeSelection)
                 {
                     case GradeSelection.All:
-                        selectedMetrics.AddMetrics(activity.Graph.AllMetrics);
+                        selectedMetrics = graph.AllMetrics;
                         break;
                     case GradeSelection.Uphill:
-                        selectedMetrics.AddMetrics(activity.Graph.UphillMetrics);
+                        selectedMetrics = graph.UphillMetrics;
                         break;
                     case GradeSelection.Downhill:
-                        selectedMetrics.AddMetrics(activity.Graph.DownhillMetrics);
+                        selectedMetrics = graph.DownhillMetrics;
                         break;
                 }
             }
             return;
         }
+
+        if (selectedAccount.SelectedGraph is null)
+            return;
         switch (gradeSelection)
         {
             case GradeSelection.All:
