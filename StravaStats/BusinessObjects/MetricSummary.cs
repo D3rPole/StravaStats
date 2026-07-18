@@ -1,31 +1,39 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using ProtoBuf;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects;
 
+[ProtoContract]
 public class MetricSummary
 {
-    [JsonIgnore, NotMapped] 
+    [JsonIgnore]
     public double MaxValue => maxValue == double.MinValue ? 0 : maxValue;
 
-    [JsonIgnore, NotMapped]
+    [JsonIgnore]
     public double MinValue => minValue == double.MaxValue ? 0 : minValue;
 
-    [JsonIgnore, NotMapped]
+    [JsonIgnore]
     public double Average => count == 0 ? 0 : Total / count;
 
-    [JsonInclude]
+    [JsonInclude, ProtoMember(1)]
     private double maxValue = double.MinValue;
+
+    [JsonInclude, ProtoMember(2)]
     public Coordinate MaxPosition { get; set; }
 
-    [JsonInclude]
+    [JsonInclude, ProtoMember(3)]
     private double minValue = double.MaxValue;
+
+    [JsonInclude, ProtoMember(4)]
     public Coordinate MinPosition { get; set; }
 
-    [JsonInclude]
+    [JsonInclude, ProtoMember(5)]
     public double Total { get; set; }
-    [JsonInclude]
+
+    [JsonInclude, ProtoMember(6)]
     private int count { get; set; }
+
     public void AddValue(double? value, Coordinate position)
     {
         if (value is null) return;

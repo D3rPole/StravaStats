@@ -1,8 +1,14 @@
-﻿namespace StravaStats.BusinessObjects;
+﻿using ProtoBuf;
 
+namespace StravaStats.BusinessObjects;
+
+[ProtoContract]
 public struct Coordinate : IEquatable<Coordinate>
 {
+    [ProtoMember(1)]
     public double Latitude { get; set; }
+
+    [ProtoMember(2)]
     public double Longitude { get; set; }
 
     public Coordinate() { }
@@ -89,8 +95,10 @@ public struct Coordinate : IEquatable<Coordinate>
     }
 }
 
+[ProtoContract]
 public class Node
 {
+    [ProtoMember(1)]
     public Coordinate Coordinate { get; set; }
 
     public Node() { }

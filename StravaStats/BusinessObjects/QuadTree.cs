@@ -1,13 +1,22 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using ProtoBuf;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
+    [ProtoContract]
     public struct BoundingBox
     {
+        [ProtoMember(1)]
         public double X1 { get; set; }
+
+        [ProtoMember(2)]
         public double Y1 { get; set; }
+
+        [ProtoMember(3)]
         public double X2 { get; set; }
+
+        [ProtoMember(4)]
         public double Y2 { get; set; }
 
         public BoundingBox() { }
@@ -33,20 +42,34 @@ namespace StravaStats.BusinessObjects
                 lat <= Y2;
         }
     }
+
+    [ProtoContract]
     public class QuadTree
     {
-        [JsonIgnore, NotMapped]
+        [JsonIgnore]
         public int MaxEdges { get; private set; } = 200;
-        [JsonIgnore, NotMapped]
+        [JsonIgnore]
         public int MaxDepth { get; private set; } = 30;
 
+        [ProtoMember(1)]
         public BoundingBox BoundingBox { get; set; }
 
+        [ProtoMember(2)]
         public int CurrentDepth { get; set; } = 0;
+
+        [ProtoMember(3)]
         public QuadTree? UpperLeft { get; set; }
+
+        [ProtoMember(4)]
         public QuadTree? UpperRight { get; set; }
+
+        [ProtoMember(5)]
         public QuadTree? DownLeft { get; set; }
+
+        [ProtoMember(6)]
         public QuadTree? DownRight { get; set; }
+
+        [ProtoMember(7)]
         public List<Edge> Edges { get; set; } = [];
 
         [JsonIgnore, NotMapped]

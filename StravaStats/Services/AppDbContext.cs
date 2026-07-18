@@ -7,7 +7,6 @@ namespace StravaStats.Services;
 public class AppDbContext : DbContext
 {
     // Quick tip: Make sure to include your model type <Product> here so EF Core knows what it's mapping!
-    public DbSet<Account> Accounts => Set<Account>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

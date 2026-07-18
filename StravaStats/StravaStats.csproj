@@ -28,6 +28,8 @@
     <PackageReference Include="OpenLayers.Blazor" Version="2.5.0" />
     <PackageReference Include="pocketken.H3" Version="4.0.0" />
     <PackageReference Include="Polyliner.Net" Version="1.0.2" />
+    <PackageReference Include="protobuf-net" Version="3.2.56" />
+    <PackageReference Include="protobuf-net.Core" Version="3.2.56" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.12" />
   </ItemGroup>
 

@@ -1,4 +1,5 @@
-﻿using StravaStats.BusinessObjects;
+﻿using ProtoBuf.Serializers;
+using StravaStats.BusinessObjects;
 using System.Text.Json;
 
 namespace StravaStats.Services
@@ -28,11 +29,12 @@ namespace StravaStats.Services
             {
                 var task = Task.Run(async () =>
                 {
-                    string activityCachedFile = Path.Combine(activityCache, Path.GetFileNameWithoutExtension(stravaFile) + ".json");
+                    string activityCachedFile = Path.Combine(activityCache, Path.GetFileNameWithoutExtension(stravaFile) + ".bin");
                     if (File.Exists(activityCachedFile))
                     {
                         using var fileStream = File.OpenRead(activityCachedFile);
-                        Activity? act = JsonSerializer.Deserialize<Activity>(fileStream);
+                        //Activity? act = JsonSerializer.Deserialize<Activity>(fileStream);
+                        Activity? act = ProtoBuf.Serializer.Deserialize<Activity>(fileStream);
 
                         if (act is not null)
                         {
@@ -54,10 +56,11 @@ namespace StravaStats.Services
                         logger.LogError($"Activity {stravaFile} has no distance. Data is corrupted or gps data is missing.");
                         return;
                     }
-                    var activity = new Activity(rawActivity, accountName);
+                    var activity = new Activity(rawActivity);
                     await activity.MatchRoads(activitiesPath);
-                    string activityJson = JsonSerializer.Serialize(activity);
-                    File.WriteAllText(activityCachedFile, activityJson);
+                    using var stream = new MemoryStream();
+                    ProtoBuf.Serializer.Serialize(stream, activity);
+                    File.WriteAllBytes(activityCachedFile, stream.ToArray());
                     loaded++;
                     logger.LogInformation($"Created cached Activity {loaded}/{stravaFiles.Count}: {activity.ActivityHeader.Id}");
                     activities.Add(activity);

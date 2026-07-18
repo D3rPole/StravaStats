@@ -1,26 +1,44 @@
 ﻿using NetTopologySuite.Index.KdTree;
 using PolylinerNet;
+using ProtoBuf;
 using StravaStats.Helper;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
+    [ProtoContract]
     public class Graph
     {
-        [JsonConverter(typeof(EdgeKeyDictionaryConverter<Edge>))]
+        [JsonConverter(typeof(EdgeKeyDictionaryConverter<Edge>)), ProtoMember(1)]
         public Dictionary<EdgeKey, Edge> Edges { get; set; } = [];
-        [JsonConverter(typeof(CoordinateDictionaryConverter<List<Coordinate>>))]
+
+        [JsonConverter(typeof(CoordinateDictionaryConverter<List<Coordinate>>)), ProtoMember(2)]
         public Dictionary<Coordinate, List<Coordinate>> AdjacencyList { get; set; } = [];
-        [JsonConverter(typeof(CoordinateDictionaryConverter<Node>))]
+
+        [JsonConverter(typeof(CoordinateDictionaryConverter<Node>)), ProtoMember(3)]
         public Dictionary<Coordinate, Node> Nodes { get; set; } = [];
+
+        [ProtoMember(4)]
         public QuadTree QuadTree { get; set; }
+
+
+        [ProtoMember(5)]
         public Metrics AllMetrics { get; set; } = new();
+
+        [ProtoMember(6)]
         public Metrics UphillMetrics { get; set; } = new();
+
+        [ProtoMember(7)]
         public Metrics DownhillMetrics { get; set; } = new();
 
+        [ProtoMember(8)]
         public MetricSummary Distance { get; set; } = new();
+
+        [ProtoMember(9)]
         public MetricSummary ActiveTime { get; set; } = new();
+
+        [ProtoMember(10)]
         public MetricSummary TotalTime { get; set; } = new();
 
         public Graph() {}

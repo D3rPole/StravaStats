@@ -1,11 +1,23 @@
-﻿namespace StravaStats.BusinessObjects;
+﻿using ProtoBuf;
 
+namespace StravaStats.BusinessObjects;
+
+[ProtoContract]
 public class Metrics
 {
+    [ProtoMember(1)]
     public MetricSummary HeartRate { get; set; } = new();
+
+    [ProtoMember(2)]
     public MetricSummary Speed { get; set; } = new();
+
+    [ProtoMember(3)]
     public MetricSummary Grade { get; set; } = new();
+
+    [ProtoMember(4)]
     public MetricSummary Wattage { get; set; } = new();
+
+    [ProtoMember(5)]
     public MetricSummary Acceleration { get; set; } = new();
 
     public Metrics AddDataPoint(TrackingPoint trackingPoint)

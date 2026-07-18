@@ -1,37 +1,59 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using ProtoBuf;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace StravaStats.BusinessObjects
+namespace StravaStats.BusinessObjects;
+
+[ProtoContract]
+public class TrackingPoint
 {
-    public class TrackingPoint
+    [ProtoMember(1)]
+    public int Time { get; set; }
+    
+    [ProtoMember(2)]
+    public double? HeartRate { get; set; }
+
+    [ProtoMember(3)]
+    public double VelocitySmooth { get; set; }
+
+    [ProtoMember(4)]
+    public double? Grade { get; set; }
+
+    [ProtoMember(5)]
+    public double? Watt { get; set; }
+
+    [ProtoMember(6)]
+    public double? Acceleration { get; set; }
+
+    [ProtoMember(7)]
+    public bool? Moving { get; set; }
+
+    [ProtoMember(8)]
+    public double? Altitude { get; set; }
+
+    [ProtoMember(9)]
+    public double Latitude { get; set; }
+
+    [ProtoMember(10)]
+    public double Longitude { get; set; }
+
+    [ProtoMember(11)]
+    public double Distance { get; set; }
+
+    [JsonInclude, ProtoMember(12)]
+    private Coordinate? coordinate { get; set; }
+
+    [JsonIgnore]
+    public double SpeedKmh => VelocitySmooth * 3.6;
+    public Coordinate Coordinate
     {
-        public int Time { get; set; }
-        public double? HeartRate { get; set; }
-        public double SpeedKmh => VelocitySmooth * 3.6;
-        public double VelocitySmooth { get; set; }
-        public double? Grade { get; set; }
-        public double? Watt { get; set; }
-        public double? Acceleration { get; set; }
-        public bool? Moving { get; set; }
-        public double? Altitude { get; set; }
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
-        public double Distance { get; set; }
-
-        [JsonInclude]
-        private Coordinate? coordinate { get; set; }
-
-        [JsonIgnore, NotMapped]
-        public Coordinate Coordinate
+        get
         {
-            get
-            {
-                if (coordinate is not null)
-                    return coordinate.Value;
-
-                coordinate = new(Latitude, Longitude);
+            if (coordinate is not null)
                 return coordinate.Value;
-            }
+
+            coordinate = new(Latitude, Longitude);
+            return coordinate.Value;
         }
     }
 }

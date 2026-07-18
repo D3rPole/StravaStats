@@ -1,11 +1,16 @@
-﻿using StravaStats.Helper;
+﻿using ProtoBuf;
+using StravaStats.Helper;
 using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects;
 
+[ProtoContract]
 public struct EdgeKey : IEquatable<EdgeKey>
 {
+    [ProtoMember(1)]
     public Coordinate StartNodeKey { get; set; }
+
+    [ProtoMember(2)]
     public Coordinate EndNodeKey { get; set; }
 
     public EdgeKey() { }
@@ -59,12 +64,22 @@ public struct EdgeKey : IEquatable<EdgeKey>
     }
 }
 
+[ProtoContract]
 public class Edge
 {
+    [ProtoMember(1)]
     public EdgeKey EdgeKey { get; set; }
+
+    [ProtoMember(2)]
     public HashSet<long> ActivityIds { get; set; } = new();
+
+    [ProtoMember(3)]
     public Metrics AllMetrics { get; set; } = new();
+
+    [ProtoMember(4)]
     public Metrics UphillMetrics { get; set; } = new();
+
+    [ProtoMember(5)]
     public Metrics DownhillMetrics { get; set; } = new();
 
     public void AddDataPoint(TrackingPoint previousPoint, TrackingPoint trackingPoint)
