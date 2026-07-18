@@ -15,6 +15,7 @@ builder.Services.AddMudServicesWithExtensions();
 builder.Services.AddSingleton<ActivityService>();
 builder.Services.AddSingleton<AccountService>();
 builder.Services.AddSingleton<StravaService>();
+builder.Services.AddSingleton<AppDbContext>();
 
 builder.Services.AddHostedService(provider => provider.GetRequiredService<AccountService>());
 

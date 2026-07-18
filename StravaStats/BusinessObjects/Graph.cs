@@ -19,6 +19,10 @@ namespace StravaStats.BusinessObjects
         public Metrics UphillMetrics { get; set; } = new();
         public Metrics DownhillMetrics { get; set; } = new();
 
+        public MetricSummary Distance { get; set; } = new();
+        public MetricSummary ActiveTime { get; set; } = new();
+        public MetricSummary TotalTime { get; set; } = new();
+
         public Graph() {}
 
         public Graph(List<Graph> graphs)
@@ -41,6 +45,9 @@ namespace StravaStats.BusinessObjects
                     DownhillMetrics.AddMetrics(edge.Value.DownhillMetrics);
                     e?.AddEdge(edge.Value);
                 }
+                Distance.AddMetric(graph.Distance);
+                ActiveTime.AddMetric(graph.ActiveTime);
+                TotalTime.AddMetric(graph.TotalTime);
             }
         }
 
@@ -116,6 +123,9 @@ namespace StravaStats.BusinessObjects
                 closestEdge.AddDataPoint(previousPoint, point);
                 closestEdge.ActivityIds.Add(activity.ActivityHeader.Id);
             }
+            Distance.AddValue(activity.ActivityHeader.Distance.GetValueOrDefault());
+            ActiveTime.AddValue(activity.ActivityHeader.MovingTime.GetValueOrDefault());
+            TotalTime.AddValue(activity.ActivityHeader.ElapsedTime.GetValueOrDefault());
         }
 
         public List<Dictionary<(Coordinate, Coordinate), Edge>> GetWays()

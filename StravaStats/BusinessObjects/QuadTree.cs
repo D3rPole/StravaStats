@@ -1,5 +1,4 @@
-﻿using OpenLayers.Blazor;
-using StravaStats.Helper;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
@@ -36,9 +35,9 @@ namespace StravaStats.BusinessObjects
     }
     public class QuadTree
     {
-        [JsonIgnore]
+        [JsonIgnore, NotMapped]
         public int MaxEdges { get; private set; } = 200;
-        [JsonIgnore]
+        [JsonIgnore, NotMapped]
         public int MaxDepth { get; private set; } = 30;
 
         public BoundingBox BoundingBox { get; set; }
@@ -50,7 +49,7 @@ namespace StravaStats.BusinessObjects
         public QuadTree? DownRight { get; set; }
         public List<Edge> Edges { get; set; } = [];
 
-        [JsonIgnore]
+        [JsonIgnore, NotMapped]
         private bool isSplit => UpperLeft is not null;
 
         public QuadTree() { }

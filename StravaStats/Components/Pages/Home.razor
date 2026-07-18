@@ -114,34 +114,121 @@
                     <MudIcon Icon="@(statsExpanded ? MudBlazor.Icons.Material.Filled.ArrowDropUp : MudBlazor.Icons.Material.Filled.ArrowDropDown)" />
                 </MudButton>
                 <MudCollapse Expanded="@(statsExpanded)">
-                    @if (selectedMetrics is not null)
+                    @if (selectedMetrics is not null && selectedGraph is not null)
                     {
                         <MudDivider Class="ma-2" />
-                        <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.body2">Maximums</MudText>
+                        <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.body2">Total Values</MudText>
+                        <MudText Typo="Typo.body1">Distance: @($"{(selectedGraph.Distance.Total / 1000):F2}") Km</MudText>
+                        <MudText Typo="Typo.body1">Active Time: @($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.Total):d' days 'hh\\:mm\\:ss}")</MudText>
+                        <MudText Typo="Typo.body1">Total Time: @($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Total):d' days 'hh\\:mm\\:ss}")</MudText>
+                        <MudText Typo="Typo.body1">Pause Time: @($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Total - selectedGraph.ActiveTime.Total):d' days 'hh\\:mm\\:ss}")</MudText>
+                        <MudText Typo="Typo.body1">Pause Per Kilometer: @($"{TimeSpan.FromSeconds((selectedGraph.TotalTime.Total - selectedGraph.ActiveTime.Total) / selectedGraph.Distance.Total * 1000):ss' seconds'}")</MudText>
                         <MudDivider Class="ma-2" />
-                        <MudText Typo="Typo.body1">Max Velocity: @($"{selectedMetrics.Speed.MaxValue:F2}") Km/h</MudText>
-                        <MudText Typo="Typo.body1">Max Acceleration: @($"{selectedMetrics.Acceleration.MaxValue:F2}") m/s²</MudText>
-                        <MudText Typo="Typo.body1">Max Wattage: @($"{selectedMetrics.Wattage.MaxValue:F2}") W</MudText>
-                        <MudText Typo="Typo.body1">Max Heartrate: @($"{selectedMetrics.HeartRate.MaxValue:F2}") BPM</MudText>
-                        <MudText Typo="Typo.body1">Max Grade: @($"{selectedMetrics.Grade.MaxValue:F2}") %</MudText>
-                        <MudText Typo="Typo.body1">Min Grade: @($"{selectedMetrics.Grade.MinValue:F2}") %</MudText>
-                        <MudDivider Class="ma-2" />
-                        <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.body2">Averages</MudText>
-                        <MudDivider Class="ma-2" />
-                        <MudText Typo="Typo.body1">Average Velocity: @($"{selectedMetrics.Speed.Average:F2}") Km/h</MudText>
-                        <MudText Typo="Typo.body1">Average Acceleration: @($"{selectedMetrics.Acceleration.Average:F2}") m/s²</MudText>
-                        <MudText Typo="Typo.body1">Average Wattage: @($"{selectedMetrics.Wattage.Average:F2}") W</MudText>
-                        <MudText Typo="Typo.body1">Average Heartrate: @($"{selectedMetrics.HeartRate.Average:F2}") BPM</MudText>
-                        <MudText Typo="Typo.body1">Average Grade: @($"{selectedMetrics.Grade.Average:F2}") %</MudText>
+                        <MudTabs>
+                            <MudTabPanel Text="Averages">
+                                <MudText Typo="Typo.body1">Average Distance: @($"{(selectedGraph.Distance.Average / 1000):F2}") Km</MudText>
+                                <MudText Typo="Typo.body1">Average Active Time: @($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.Average):hh\\:mm\\:ss}")</MudText>
+                                <MudText Typo="Typo.body1">Average Total Time: @($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Average):hh\\:mm\\:ss}")</MudText>
+                                <MudText Typo="Typo.body1">Average Pause Time: @($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Average - selectedGraph.ActiveTime.Average):hh\\:mm\\:ss}")</MudText>
+                                <MudText Typo="Typo.body1">Average Velocity: @($"{selectedMetrics.Speed.Average:F2}") Km/h</MudText>
+                                <MudText Typo="Typo.body1">Average Acceleration: @($"{selectedMetrics.Acceleration.Average:F2}") m/s²</MudText>
+                                <MudText Typo="Typo.body1">Average Wattage: @($"{selectedMetrics.Wattage.Average:F2}") W</MudText>
+                                <MudText Typo="Typo.body1">Average Heartrate: @($"{selectedMetrics.HeartRate.Average:F2}") BPM</MudText>
+                                <MudText Typo="Typo.body1">Average Grade: @($"{selectedMetrics.Grade.Average:F2}") %</MudText>
+                            </MudTabPanel>
+                            <MudTabPanel Text="Maximums">
+                                <MudText Typo="Typo.body1">Max Distance: @($"{(selectedGraph.Distance.MaxValue / 1000):F2}") Km</MudText>
+                                <MudText Typo="Typo.body1">Max Active Time: @($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.MaxValue):hh\\:mm\\:ss}")</MudText>
+                                <MudText Typo="Typo.body1">Max Total Time: @($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MaxValue):hh\\:mm\\:ss}")</MudText>
+                                <MudText Typo="Typo.body1">Max Pause Time: @($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MaxValue - selectedGraph.ActiveTime.MaxValue):hh\\:mm\\:ss}")</MudText>
+                                <MudText Typo="Typo.body1">Max Velocity: @($"{selectedMetrics.Speed.MaxValue:F2}") Km/h</MudText>
+                                <MudText Typo="Typo.body1">Max Acceleration: @($"{selectedMetrics.Acceleration.MaxValue:F2}") m/s²</MudText>
+                                <MudText Typo="Typo.body1">Max Wattage: @($"{selectedMetrics.Wattage.MaxValue:F2}") W</MudText>
+                                <MudText Typo="Typo.body1">Max Heartrate: @($"{selectedMetrics.HeartRate.MaxValue:F2}") BPM</MudText>
+                                <MudText Typo="Typo.body1">Max Grade: @($"{selectedMetrics.Grade.MaxValue:F2}") %</MudText>
+                            </MudTabPanel>
+                            <MudTabPanel Text="Minimums">
+                                <MudText Typo="Typo.body1">Min Distance: @($"{(selectedGraph.Distance.MinValue / 1000):F2}") Km</MudText>
+                                <MudText Typo="Typo.body1">Min Active Time: @($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.MinValue):hh\\:mm\\:ss}")</MudText>
+                                <MudText Typo="Typo.body1">Min Total Time: @($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MinValue):hh\\:mm\\:ss}")</MudText>
+                                <MudText Typo="Typo.body1">Min Pause Time: @($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MinValue - selectedGraph.ActiveTime.MinValue):hh\\:mm\\:ss}")</MudText>
+                                <MudText Typo="Typo.body1">Min Velocity: @($"{selectedMetrics.Speed.MinValue:F2}") Km/h</MudText>
+                                <MudText Typo="Typo.body1">Min Acceleration: @($"{selectedMetrics.Acceleration.MinValue:F2}") m/s²</MudText>
+                                <MudText Typo="Typo.body1">Min Wattage: @($"{selectedMetrics.Wattage.MinValue:F2}") W</MudText>
+                                <MudText Typo="Typo.body1">Min Heartrate: @($"{selectedMetrics.HeartRate.MinValue:F2}") BPM</MudText>
+                                <MudText Typo="Typo.body1">Min Grade: @($"{selectedMetrics.Grade.MinValue:F2}") %</MudText>
+                            </MudTabPanel>
+                        </MudTabs>
                     }
                 </MudCollapse>
             </MudCard>
+
+            <div class="@("activities-list-card" + (listExpanded ? " enabled" : ""))">
+                <MudCard Class="activities-list">
+                    <MudButton OnClick="ListExpandClicked" Class="d-flex" Disabled="@(selectedAccount is null || selectedAccount.SelectedActivities is null)">
+                        <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.h6">Activities</MudText>
+                        <MudIcon Icon="@(listExpanded ? MudBlazor.Icons.Material.Filled.ArrowDropUp : MudBlazor.Icons.Material.Filled.ArrowDropDown)" />
+                    </MudButton>
+                    <MudCollapse Expanded="@(listExpanded)">
+                        <MudDivider />
+                        @if (selectedAccount is not null && selectedAccount.SelectedActivities is not null)
+                        {
+                            <MudDataGrid Dense="true" T="Activity" MultiSelection="true" Items="selectedAccount.SelectedActivities" @bind-SelectedItems="SelectedActivities">
+                                <Columns>
+                                    <SelectColumn T="Activity" />
+                                    <TemplateColumn Title="Name" Sortable="true" SortBy="x => x.ActivityHeader.Name">
+                                        <CellTemplate>
+                                            <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.ActivityHeader.Id</MudText>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Type" Sortable="true" SortBy="x => x.ActivityHeader.SportType">
+                                        <CellTemplate>
+                                            <MudIcon Icon="@context.Item.ActivityHeader.ActivityType.GetIcon()" />
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Distance" Sortable="true" SortBy="x => x.ActivityHeader.Distance">
+                                        <CellTemplate>
+                                            @($"{context.Item.ActivityHeader.Distance / 1000.0:F2} Km")
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    @if (popupActivities is not null && popupActivities.Count > 0)
+                                    {
+                                        <TemplateColumn Title="Selected" Sortable="true" SortBy="x => (popupActivities != null && popupActivities.Contains(x.ActivityHeader.Id)) ? 1 : 0">
+                                            <CellTemplate>
+                                                @if (popupActivities is not null && popupActivities.Contains(context.Item.ActivityHeader.Id))
+                                                {
+                                                    <MudIcon Icon="@MudBlazor.Icons.Material.Filled.LocationOn" Color="MudBlazor.Color.Primary" />
+                                                }
+                                            </CellTemplate>
+                                        </TemplateColumn>
+                                    }
+                                    <TemplateColumn Title="Date" Sortable="true" SortBy="x => x.ActivityHeader.StartDate">
+                                        <CellTemplate>
+                                            <MudText Style="text-wrap: nowrap" Typo="Typo.body1">@($"{context.Item.ActivityHeader.StartDate:dd.MM.yyyy}")</MudText>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
+                        }
+                    </MudCollapse>
+                </MudCard>
+            </div>
+
+            <div style="position: absolute;
+                top: 0px;
+                right: 0px;
+                width:50px;
+                height:50px;
+                background: red;
+                z-index:900">
+            </div>
 
             <div id="map">
                 <Map ConfigureJsMethod="myMapConfig"
                      OnClick="OnClick"
                      InitialZoom="8"
                      InitialCenter="new OpenLayers.Blazor.Coordinate(7.71667, 52.28333)"
+                     ViewProjection=""
                      @ref="map"
                      @key="@mapLink">
                     <Features>
@@ -241,96 +328,21 @@
                     </Layers>
                 </Map>
             </div>
-
-            <div class="@("activities-list-card" + (listExpanded ? " enabled" : ""))">
-                <MudCard Class="activities-list">
-                    <MudButton OnClick="ListExpandClicked" Class="d-flex" Disabled="@(selectedAccount is null || selectedAccount.SelectedActivities is null)">
-                        <MudText Class="flex-grow-1 align-self-center pl-2" Typo="Typo.h6">Activities</MudText>
-                        <MudIcon Icon="@(listExpanded ? MudBlazor.Icons.Material.Filled.ArrowDropUp : MudBlazor.Icons.Material.Filled.ArrowDropDown)" />
-                    </MudButton>
-                    <MudCollapse Expanded="@(listExpanded)">
-                        <MudDivider />
-                        @if (selectedAccount is not null && selectedAccount.SelectedActivities is not null)
-                        {
-                            <MudDataGrid Dense="true" T="Activity" MultiSelection="true" Items="selectedAccount.SelectedActivities" @bind-SelectedItems="SelectedActivities">
-                                <Columns>
-                                    <SelectColumn T="Activity" />
-                                    <TemplateColumn Title="Name" Sortable="true" SortBy="x => x.ActivityHeader.Name">
-                                        <CellTemplate>
-                                            <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.ActivityHeader.Name</MudText>
-                                        </CellTemplate>
-                                    </TemplateColumn>
-                                    <TemplateColumn Title="Type" Sortable="true" SortBy="x => x.ActivityHeader.SportType">
-                                        <CellTemplate>
-                                            <MudIcon Icon="@context.Item.ActivityHeader.ActivityType.GetIcon()" />
-                                        </CellTemplate>
-                                    </TemplateColumn>
-                                    <TemplateColumn Title="Distance" Sortable="true" SortBy="x => x.ActivityHeader.Distance">
-                                        <CellTemplate>
-                                            @($"{context.Item.ActivityHeader.Distance / 1000.0:F2} Km")
-                                        </CellTemplate>
-                                    </TemplateColumn>
-                                    @if (popupActivities is not null && popupActivities.Count > 0)
-                                    {
-                                        <TemplateColumn Title="Selected" Sortable="true" SortBy="x => (popupActivities != null && popupActivities.Contains(x.ActivityHeader.Id)) ? 1 : 0">
-                                            <CellTemplate>
-                                                @if (popupActivities is not null && popupActivities.Contains(context.Item.ActivityHeader.Id))
-                                                {
-                                                    <MudIcon Icon="@MudBlazor.Icons.Material.Filled.LocationOn" Color="MudBlazor.Color.Primary" />
-                                                }
-                                            </CellTemplate>
-                                        </TemplateColumn>
-                                    }
-                                    <TemplateColumn Title="Date" Sortable="true" SortBy="x => x.ActivityHeader.StartDate">
-                                        <CellTemplate>
-                                            <MudText Style="text-wrap: nowrap" Typo="Typo.body1">@($"{context.Item.ActivityHeader.StartDate:dd.MM.yyyy}")</MudText>
-                                        </CellTemplate>
-                                    </TemplateColumn>
-                                </Columns>
-                            </MudDataGrid>
-                        }
-                    </MudCollapse>
-                </MudCard>
-            </div>
         </div>
     </div>
 </div>
 
 @code {
-    private void SelectedActivityTypesFilterChanged(IReadOnlyCollection<ActivityType>? activityTypes)
-    {
-        if (activityTypes is null || activityTypes.Count == 0)
-        {
-            selectedActivityTypes = [ActivityType.All];
-            return;
-        }
-        List<ActivityType> typeFilter = activityTypes.ToList();
-        if (typeFilter.Contains(ActivityType.All) && !selectedActivityTypes.Contains(ActivityType.All))
-        {
-            selectedActivityTypes = [ActivityType.All];
-            return;
-        }
-
-        if (typeFilter.Count > 1)
-            typeFilter.Remove(ActivityType.All);
-
-        selectedActivityTypes = typeFilter;
-    }
+    Graph? selectedGraph;
     List<ActivityType> selectedActivityTypes
     {
         get => field; set
         {
-            field = value; UpdateDisplayedGraph();
+            field = value;
+            UpdateDisplayedGraph();
             StateHasChanged();
         }
     } = [ActivityType.All];
-    private void SelectGrade(GradeSelection gradeSelection)
-    {
-        this.gradeSelection = gradeSelection;
-        SetSelectedMetrics();
-        UpdateDisplayedGraph();
-        StateHasChanged();
-    }
     GradeSelection gradeSelection = GradeSelection.All;
     HashSet<Activity> SelectedActivities
     {
@@ -344,50 +356,10 @@
                 UpdateDisplayedGraph();
                 return;
             }
-            SetSelectedMetrics();
             UpdateDisplayedGraph();
         }
     } = [];
-    private void SetSelectedMetrics()
-    {
-        if (selectedAccount is null)
-            return;
-        if (SelectedActivities is not null && SelectedActivities.Count > 0)
-        {
-            var graph = selectedAccount.GetGraphByActivities(SelectedActivities.Select(a => a.ActivityHeader.Id));
-            foreach (var activity in SelectedActivities)
-            {
-                switch (gradeSelection)
-                {
-                    case GradeSelection.All:
-                        selectedMetrics = graph.AllMetrics;
-                        break;
-                    case GradeSelection.Uphill:
-                        selectedMetrics = graph.UphillMetrics;
-                        break;
-                    case GradeSelection.Downhill:
-                        selectedMetrics = graph.DownhillMetrics;
-                        break;
-                }
-            }
-            return;
-        }
 
-        if (selectedAccount.SelectedGraph is null)
-            return;
-        switch (gradeSelection)
-        {
-            case GradeSelection.All:
-                selectedMetrics = selectedAccount.SelectedGraph.AllMetrics;
-                break;
-            case GradeSelection.Uphill:
-                selectedMetrics = selectedAccount.SelectedGraph.UphillMetrics;
-                break;
-            case GradeSelection.Downhill:
-                selectedMetrics = selectedAccount.SelectedGraph.DownhillMetrics;
-                break;
-        }
-    }
     Metrics selectedMetrics;
     Action UpdateGraphAction;
     private bool isLoading;
@@ -535,7 +507,6 @@
             return;
         Start = new(DateOnly.FromDateTime(selectedAccount.StartDateRange), TimeOnly.MinValue);
         End = new(DateOnly.FromDateTime(selectedAccount.EndDateRange), TimeOnly.MaxValue);
-        SetSelectedMetrics();
         SelectedActivities = [];
         _sizeRange = dateRange;
         UpdateDisplayedGraph();
@@ -544,6 +515,75 @@
     #endregion
 
     #region Selections
+
+    private void SelectGrade(GradeSelection gradeSelection)
+    {
+        this.gradeSelection = gradeSelection;
+        UpdateDisplayedGraph();
+        StateHasChanged();
+    }
+
+    private void SelectedActivityTypesFilterChanged(IReadOnlyCollection<ActivityType>? activityTypes)
+    {
+        if (activityTypes is null || activityTypes.Count == 0)
+        {
+            selectedActivityTypes = [ActivityType.All];
+            return;
+        }
+        List<ActivityType> typeFilter = activityTypes.ToList();
+        if (typeFilter.Contains(ActivityType.All) && !selectedActivityTypes.Contains(ActivityType.All))
+        {
+            selectedActivityTypes = [ActivityType.All];
+            return;
+        }
+
+        if (typeFilter.Count > 1)
+            typeFilter.Remove(ActivityType.All);
+
+        selectedActivityTypes = typeFilter;
+    }
+
+    private void SetSelectedMetrics()
+    {
+        if (selectedAccount is null)
+            return;
+        if (SelectedActivities is not null && SelectedActivities.Count > 0)
+        {
+            selectedGraph = selectedAccount.GetGraphByActivities(SelectedActivities.Select(a => a.ActivityHeader.Id));
+            foreach (var activity in SelectedActivities)
+            {
+                switch (gradeSelection)
+                {
+                    case GradeSelection.All:
+                        selectedMetrics = selectedGraph.AllMetrics;
+                        break;
+                    case GradeSelection.Uphill:
+                        selectedMetrics = selectedGraph.UphillMetrics;
+                        break;
+                    case GradeSelection.Downhill:
+                        selectedMetrics = selectedGraph.DownhillMetrics;
+                        break;
+                }
+            }
+            return;
+        }
+
+        if (selectedAccount.SelectedGraph is null)
+            return;
+        selectedGraph = selectedAccount.SelectedGraph;
+        switch (gradeSelection)
+        {
+            case GradeSelection.All:
+                selectedMetrics = selectedAccount.SelectedGraph.AllMetrics;
+                break;
+            case GradeSelection.Uphill:
+                selectedMetrics = selectedAccount.SelectedGraph.UphillMetrics;
+                break;
+            case GradeSelection.Downhill:
+                selectedMetrics = selectedAccount.SelectedGraph.DownhillMetrics;
+                break;
+        }
+    }
 
     private async Task SelectedMetricChanged(Metric metric)
     {
@@ -566,7 +606,6 @@
 
         Start = new(DateOnly.FromDateTime(selectedAccount.StartDateRange), TimeOnly.MinValue);
         End = new(DateOnly.FromDateTime(selectedAccount.EndDateRange), TimeOnly.MaxValue);
-        SetSelectedMetrics();
         _sizeRange = dateRange;
     }
 
@@ -604,6 +643,8 @@
 
         markerKey = Guid.NewGuid();
         popupCoordinate = center;
+        if (popupCoordinate is not null)
+            GetPixelPos(popupCoordinate.Value);
         Metrics metrics;
         switch (gradeSelection)
         {
@@ -773,6 +814,7 @@
             ticksAfter = DateTime.Now.Ticks;
             logger.LogInformation("SetGraph " + (ticksAfter - ticks) / TimeSpan.TicksPerMillisecond + " ms");
             isLoading = false;
+            SetSelectedMetrics();
             await InvokeAsync(StateHasChanged);
         }).Debounce(TimeSpan.FromMilliseconds(200));
     }
@@ -793,4 +835,8 @@
         await JS.InvokeVoidAsync("registerBlazorComponent", objRef);
     }
 
+    private async Task GetPixelPos(OpenLayers.Blazor.Coordinate coordinate)
+    {
+        var str = await JS.InvokeAsync<string>("getPixelFromCoordinate", coordinate.Longitude, coordinate.Latitude);
+    }
 }

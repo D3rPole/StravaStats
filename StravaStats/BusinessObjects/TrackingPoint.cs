@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
@@ -6,8 +7,7 @@ namespace StravaStats.BusinessObjects
     {
         public int Time { get; set; }
         public double? HeartRate { get; set; }
-        public double Velocity { get; set; }
-        public double SpeedKmh => Velocity * 3.6;
+        public double SpeedKmh => VelocitySmooth * 3.6;
         public double VelocitySmooth { get; set; }
         public double? Grade { get; set; }
         public double? Watt { get; set; }
@@ -21,7 +21,7 @@ namespace StravaStats.BusinessObjects
         [JsonInclude]
         private Coordinate? coordinate { get; set; }
 
-        [JsonIgnore]
+        [JsonIgnore, NotMapped]
         public Coordinate Coordinate
         {
             get

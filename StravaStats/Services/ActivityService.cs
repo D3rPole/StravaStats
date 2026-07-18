@@ -5,7 +5,7 @@ namespace StravaStats.Services
 {
     public class ActivityService(ILogger<ActivityService> logger)
     {
-        public async Task<List<Activity>> GetActivities(string activitiesPath)
+        public async Task<List<Activity>> GetActivities(string activitiesPath, string accountName)
         {
             string stravaActivitiesPath = Path.Combine(activitiesPath, AppData.ActivitiesStravaFileLocation);
             string activityCache = Path.Combine(activitiesPath, AppData.ActivitiesCacheLocation);
@@ -54,7 +54,7 @@ namespace StravaStats.Services
                         logger.LogError($"Activity {stravaFile} has no distance. Data is corrupted or gps data is missing.");
                         return;
                     }
-                    var activity = new Activity(rawActivity);
+                    var activity = new Activity(rawActivity, accountName);
                     await activity.MatchRoads(activitiesPath);
                     string activityJson = JsonSerializer.Serialize(activity);
                     File.WriteAllText(activityCachedFile, activityJson);

@@ -1,17 +1,18 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects;
 
 public class MetricSummary
 {
-    [JsonIgnore]
+    [JsonIgnore, NotMapped] 
     public double MaxValue => maxValue == double.MinValue ? 0 : maxValue;
 
-    [JsonIgnore]
+    [JsonIgnore, NotMapped]
     public double MinValue => minValue == double.MaxValue ? 0 : minValue;
 
-    [JsonIgnore]
-    public double Average => count == 0 ? 0 : totalValue / count;
+    [JsonIgnore, NotMapped]
+    public double Average => count == 0 ? 0 : Total / count;
 
     [JsonInclude]
     private double maxValue = double.MinValue;
@@ -22,14 +23,14 @@ public class MetricSummary
     public Coordinate MinPosition { get; set; }
 
     [JsonInclude]
-    private double totalValue { get; set; }
+    public double Total { get; set; }
     [JsonInclude]
     private int count { get; set; }
-    public void AddMetric(double? value, Coordinate position)
+    public void AddValue(double? value, Coordinate position)
     {
         if (value is null) return;
         count++;
-        totalValue += value.Value;
+        Total += value.Value;
         if (maxValue < value.Value)
         {
             maxValue = value.Value;
@@ -41,12 +42,23 @@ public class MetricSummary
             MinPosition = position;
         }
     }
+    public void AddValue(double? value)
+    {
+        if (value is null) return;
+        count++;
+        Total += value.Value;
+        if (maxValue < value.Value)
+            maxValue = value.Value;
+
+        if (minValue > value.Value)
+            minValue = value.Value;
+    }
 
     public void AddMetric(MetricSummary metric)
     {
         if (metric is null) return;
         count += metric.count;
-        totalValue += metric.totalValue;
+        Total += metric.Total;
         if (maxValue < metric.maxValue)
         {
             maxValue = metric.maxValue;

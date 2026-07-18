@@ -10,11 +10,11 @@ public class Metrics
 
     public Metrics AddDataPoint(TrackingPoint trackingPoint)
     {
-        HeartRate.AddMetric(trackingPoint.HeartRate, trackingPoint.Coordinate);
-        Speed.AddMetric(trackingPoint.SpeedKmh, trackingPoint.Coordinate);
-        Grade.AddMetric(trackingPoint.Grade, trackingPoint.Coordinate);
-        Wattage.AddMetric(trackingPoint.Watt, trackingPoint.Coordinate);
-        Acceleration.AddMetric(trackingPoint.Acceleration, trackingPoint.Coordinate);
+        HeartRate.AddValue(trackingPoint.HeartRate, trackingPoint.Coordinate);
+        Speed.AddValue(trackingPoint.SpeedKmh, trackingPoint.Coordinate);
+        Grade.AddValue(trackingPoint.Grade, trackingPoint.Coordinate);
+        Wattage.AddValue(trackingPoint.Watt, trackingPoint.Coordinate);
+        Acceleration.AddValue(trackingPoint.Acceleration, trackingPoint.Coordinate);
         return this;
     }
 
@@ -25,15 +25,6 @@ public class Metrics
         Grade.AddMetric(metrics.Grade);
         Wattage.AddMetric(metrics.Wattage);
         Acceleration.AddMetric(metrics.Acceleration);
-        return this;
-    }
-
-    public Metrics AddMetrics(IEnumerable<Metrics> metricsList)
-    {
-        foreach (var metrics in metricsList)
-        {
-            AddMetrics(metrics);
-        }
         return this;
     }
 }

@@ -3,6 +3,10 @@ function registerBlazorComponent(dotNetRef) {
     blazorComponentRef = dotNetRef;
 }
 
+window.getPixelFromCoordinate = function (x, y){
+    return window._myOLMap.getPixelFromCoordinate([x, y]);
+}
+
 window.myMapConfig = function (olMap) {
     window._myOLMap = olMap;
     window._edgeLayer = null;

@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.Diagnostics;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -6,24 +8,36 @@ namespace StravaStats.BusinessObjects
 {
     public class Activity
     {
+        [Key]
+        public string AccountName { get; set; }
+        [Key]
+        public long ActivityId { get; set; }
         public ActivityHeader ActivityHeader { get; set; }
 
         public List<TrackingPoint> TrackingPoints { get; set; } = [];
 
         public Graph Graph { get; set; }
 
-        [JsonIgnore]
+        [JsonIgnore, NotMapped]
         public ValhallaResponse ValhallaResponse { get; set; }
 
-        [JsonIgnore]
+        [JsonIgnore, NotMapped]
         ILogger<Activity> logger = AppData.GetService<ILogger<Activity>>();
 
         public Activity() { }
 
-        public Activity(RawActivity rawActivity)
+        public Activity(RawActivity rawActivity, string accountName)
         {
+            this.AccountName = accountName;
             if (rawActivity.ActivityHeader is not null)
+            {
                 this.ActivityHeader = rawActivity.ActivityHeader;
+                ActivityId = rawActivity.ActivityHeader.Id;
+            }
+            else
+            {
+                throw new InvalidOperationException("Header is null");
+            }
 
             for (int i = 0; i < rawActivity.Distance.Size; i++)
             {
@@ -62,42 +76,6 @@ namespace StravaStats.BusinessObjects
                         trackingPoint.Longitude = lon.GetDouble();
                 }
 
-
-                if (rawActivity.Velocity is not null && rawActivity.Time is not null)
-                {
-                    if (i > 0)
-                    {
-                        var beforeTrackingPoint = TrackingPoints[^1];
-                        double deltaTime = trackingPoint.Time - beforeTrackingPoint.Time;
-                        if (deltaTime > 0)
-                        {
-                            double deltaDistance = trackingPoint.Distance - beforeTrackingPoint.Distance;
-                            if (deltaDistance > 20)
-                            {
-                                // incase distance is unreasnoble long (maybe gps glitch?), assume last known speed
-                                trackingPoint.Velocity = beforeTrackingPoint.Velocity;
-                            }
-                            else
-                            {
-                                trackingPoint.Velocity = deltaDistance / deltaTime;
-                            }
-                        }
-                        else
-                        {
-                            // just use last known values
-                            trackingPoint.Velocity = beforeTrackingPoint.Velocity;
-                        }
-                    }
-                    else
-                    {
-                        trackingPoint.Velocity = 0;
-                    }
-                }
-                else
-                {
-                    trackingPoint.Velocity = 0;
-                }
-
                 TrackingPoints.Add(trackingPoint);
             }
 
@@ -131,7 +109,7 @@ namespace StravaStats.BusinessObjects
                     .ToList();
 
                 var deltaTime = trackingPoint.Time - lastTrackingPoint.Time;
-                var deltaSpeed = trackingPoint.Velocity - lastTrackingPoint.Velocity;
+                var deltaSpeed = trackingPoint.VelocitySmooth - lastTrackingPoint.VelocitySmooth;
                 if (deltaSpeed > 20 || deltaTime == 0)
                     continue;
                 double rawAcceleration = deltaSpeed / deltaTime;
@@ -149,14 +127,14 @@ namespace StravaStats.BusinessObjects
 
         public void CalculatePower(TrackingPoint trackingPoint)
         {
-            if (trackingPoint.Grade is null || trackingPoint.Acceleration is null || trackingPoint.Velocity <= 0.1)
+            if (trackingPoint.Grade is null || trackingPoint.Acceleration is null || trackingPoint.VelocitySmooth <= 0.1)
             {
                 trackingPoint.Watt = 0;
                 return;
             }
 
             double mass = 100;
-            double velocity = trackingPoint.Velocity;
+            double velocity = trackingPoint.VelocitySmooth;
             double grade = trackingPoint.Grade.Value / 100.0;
 
             double denominator = Math.Sqrt(1 + grade * grade);
