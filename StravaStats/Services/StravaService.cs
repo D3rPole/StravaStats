@@ -76,7 +76,7 @@ namespace StravaStats.Services
                 }
                 var str = await response.Content.ReadAsStreamAsync();
                 currentRequestActivities = JsonSerializer.Deserialize<List<ActivityHeader>>(str);
-                activities.AddRange(currentRequestActivities ?? []);
+                activities.AddRange(currentRequestActivities?.Where(a => a.Type != "Workout" && a.Distance > 0) ?? []);
                 page++;
             } while (currentRequestActivities is not null && currentRequestActivities.Count > 0);
 
@@ -97,7 +97,6 @@ namespace StravaStats.Services
                 if (File.Exists(activityPath))
                 {
                     loaded++;
-                    logger.LogInformation($"Activity {loaded} / {activities.Count} for {account.Name} already Cached");
                     continue;
                 }
 
@@ -110,6 +109,8 @@ namespace StravaStats.Services
 
                 var streamResponse = await response.Content.ReadAsStreamAsync();
                 var rawActivity = JsonSerializer.Deserialize<RawActivity>(streamResponse);
+                if (rawActivity is null || rawActivity.Distance is null)
+                    continue; // missing gps data, skip
                 rawActivity.ActivityHeader = activity;
                 File.WriteAllText(activityPath, JsonSerializer.Serialize(rawActivity));
                 loaded++;

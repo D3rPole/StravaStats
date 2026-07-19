@@ -15,8 +15,8 @@ public struct Coordinate : IEquatable<Coordinate>
 
     public Coordinate(double latitude, double longitude)
     {
-        Latitude = Math.Round(latitude, 6);
-        Longitude = Math.Round(longitude, 6);
+        Latitude = Math.Round(latitude, 5);
+        Longitude = Math.Round(longitude, 5);
     }
 
     public bool Equals(Coordinate other)
@@ -75,7 +75,7 @@ public struct Coordinate : IEquatable<Coordinate>
 
     public override string ToString()
     {
-        return $"{Latitude:F6};{Longitude:F6}";
+        return $"{Latitude:F5};{Longitude:F5}";
     }
 
     public static Coordinate FromString(string value)

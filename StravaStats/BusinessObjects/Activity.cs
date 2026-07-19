@@ -233,8 +233,9 @@ public class Activity
         int a = 0;
         for (int i = 0; i < TrackingPoints.Count; i++)
         {
-            TrackingPoints[i].Latitude = ValhallaResponse.MatchedPoints[i].Lat;
-            TrackingPoints[i].Longitude = ValhallaResponse.MatchedPoints[i].Lon;
+            Coordinate coordinate = new(ValhallaResponse.MatchedPoints[i].Lat, ValhallaResponse.MatchedPoints[i].Lon);
+            TrackingPoints[i].Latitude = coordinate.Latitude;
+            TrackingPoints[i].Longitude = coordinate.Longitude;
         }
         Graph = new Graph([this]);
     }
