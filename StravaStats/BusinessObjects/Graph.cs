@@ -146,49 +146,6 @@ namespace StravaStats.BusinessObjects
             TotalTime.AddValue(activity.ActivityHeader.ElapsedTime.GetValueOrDefault());
         }
 
-        public List<Dictionary<(Coordinate, Coordinate), Edge>> GetWays()
-        {
-            var intersections = AdjacencyList.Where(t => t.Value.Count > 2).ToDictionary();
-            var visitedEdges = new HashSet<(Coordinate, Coordinate)>();
-            var ways = new List<Dictionary<(Coordinate, Coordinate), Edge>>();
-            foreach (var intersection in intersections)
-            {
-                foreach (var adjacentNodeKey in intersection.Value)
-                {
-                    if (visitedEdges.Contains((intersection.Key, adjacentNodeKey)) || visitedEdges.Contains((adjacentNodeKey, intersection.Key)))
-                        continue;
-                    var way = new Dictionary<(Coordinate, Coordinate), Edge>();
-                    var currentNodeKey = adjacentNodeKey;
-                    var previousNodeKey = intersection.Key;
-                    while (true)
-                    {
-                        EdgeKey edgeKey = new(previousNodeKey, currentNodeKey);
-                        var edge = GetEdge(edgeKey);
-                        if (edge is null)
-                            break;
-                        way.Add((edge.EdgeKey.StartNodeKey, edge.EdgeKey.EndNodeKey), edge);
-                        visitedEdges.Add((previousNodeKey, currentNodeKey));
-                        if (AdjacencyList[currentNodeKey].Count != 2) // stop at next intersection
-                            break;
-                        // move to the next node
-                        var nextNodeKeys = AdjacencyList[currentNodeKey].Where(k => !k.Equals(previousNodeKey)).ToList();
-                        if (nextNodeKeys.Count == 0)
-                            break; // dead end
-                        previousNodeKey = currentNodeKey;
-                        currentNodeKey = nextNodeKeys[0];
-                    }
-                    if (way.Count > 0)
-                        ways.Add(way);
-                }
-            }
-            return ways;
-        }
-
-        public void AddNode(double lat, double lon)
-        {
-            AddNode(new Node(lat, lon));
-        }
-
         public void AddNode(Node node)
         {
             if (Nodes.ContainsKey(node.Coordinate))

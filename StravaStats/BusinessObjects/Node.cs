@@ -15,8 +15,8 @@ public struct Coordinate : IEquatable<Coordinate>
 
     public Coordinate(double latitude, double longitude)
     {
-        Latitude = Math.Round(latitude, 5);
-        Longitude = Math.Round(longitude, 5);
+        Latitude = Math.Round(latitude, 6);
+        Longitude = Math.Round(longitude, 6);
     }
 
     public bool Equals(Coordinate other)
