@@ -76,7 +76,7 @@ namespace StravaStats.BusinessObjects
             double maxNodeDistance = double.Parse(configiration["MaxNodeDistance"]);
             foreach (var activity in activities)
             {
-                var valhallaResponse = activity.ValhallaResponse;
+                var valhallaResponse = activity.ValhallaTraceResponse;
                 if (valhallaResponse is null)
                     continue;
                 foreach (var node in valhallaResponse.NodeCoords)

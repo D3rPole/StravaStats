@@ -21,7 +21,7 @@ public class Activity
     public Graph Graph { get; set; }
 
     [JsonIgnore]
-    public ValhallaResponse ValhallaResponse { get; set; }
+    public ValhallaTraceAttributesResponse ValhallaTraceResponse { get; set; }
 
     [JsonIgnore]
     ILogger<Activity> logger = AppData.GetService<ILogger<Activity>>();
@@ -170,9 +170,9 @@ public class Activity
         if (File.Exists(cacheFilePath))
         {
             using var fileStream = File.OpenRead(cacheFilePath);
-            ValhallaResponse = JsonSerializer.Deserialize<ValhallaResponse>(fileStream);
+            ValhallaTraceResponse = JsonSerializer.Deserialize<ValhallaTraceAttributesResponse>(fileStream);
 
-            if (ValhallaResponse is not null)
+            if (ValhallaTraceResponse is not null)
             {
                 MatchTrackingPointsToValhallaResponse();
                 return;
@@ -211,8 +211,8 @@ public class Activity
             logger.LogError($"Valhalla request failed with status code: {response.StatusCode}");
             return;
         }
-        ValhallaResponse = await response.Content.ReadFromJsonAsync<ValhallaResponse>();
-        if (ValhallaResponse is null)
+        ValhallaTraceResponse = await response.Content.ReadFromJsonAsync<ValhallaTraceAttributesResponse>();
+        if (ValhallaTraceResponse is null)
         {
             logger.LogError("Couldn't parse Valhalla response");
             return;
@@ -220,11 +220,26 @@ public class Activity
         logger.LogInformation("Retrieved Valhalla response");
         MatchTrackingPointsToValhallaResponse();
 
+        response = await client.PostAsJsonAsync($"{configuration["ValhallaServer"]}/locations", new ValhallaLocations()
+        {
+            Locations = [
+                new ValhallaLocation() { Lat = TrackingPoints[0].Latitude, Lon = TrackingPoints[0].Longitude},
+                new ValhallaLocation() { Lat = TrackingPoints[^1].Latitude, Lon = TrackingPoints[^1].Longitude}
+            ]
+        });
+        ValhallaTraceResponse.ValhallaLocationsResponse = await response.Content.ReadFromJsonAsync<ValhallaLocationsResponse>();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogError($"Valhalla locations request failed with status code: {response.StatusCode}");
+            return;
+        }
+
         if (!Directory.Exists(cacheDir))
         {
             Directory.CreateDirectory(cacheDir);
         }
-        string json = JsonSerializer.Serialize(ValhallaResponse);
+        string json = JsonSerializer.Serialize(ValhallaTraceResponse);
         File.WriteAllText(cacheFilePath, json);
     }
 
@@ -233,7 +248,7 @@ public class Activity
         int a = 0;
         for (int i = 0; i < TrackingPoints.Count; i++)
         {
-            Coordinate coordinate = new(ValhallaResponse.MatchedPoints[i].Lat, ValhallaResponse.MatchedPoints[i].Lon);
+            Coordinate coordinate = new(ValhallaTraceResponse.MatchedPoints[i].Lat, ValhallaTraceResponse.MatchedPoints[i].Lon);
             TrackingPoints[i].Latitude = coordinate.Latitude;
             TrackingPoints[i].Longitude = coordinate.Longitude;
         }

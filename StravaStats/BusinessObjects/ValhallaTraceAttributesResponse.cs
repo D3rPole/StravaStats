@@ -4,7 +4,7 @@ using StravaStats.CustomPolyliner;
 
 namespace StravaStats.BusinessObjects
 {
-    public class ValhallaResponse
+    public class ValhallaTraceAttributesResponse
     {
 
         [JsonPropertyName("edges")]
@@ -33,6 +33,7 @@ namespace StravaStats.BusinessObjects
                 return field;
             }
         }
+        public ValhallaLocationsResponse ValhallaLocationsResponse { get; set; }
     }
 
     public class ValhallaEdge
