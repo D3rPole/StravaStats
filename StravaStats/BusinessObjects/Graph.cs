@@ -7,39 +7,93 @@ using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
-    [ProtoContract]
+    [ProtoContract(ImplicitFields = ImplicitFields.None)]
     public class Graph
     {
-        [JsonConverter(typeof(EdgeKeyDictionaryConverter<Edge>)), ProtoMember(1)]
         public Dictionary<EdgeKey, Edge> Edges { get; set; } = [];
 
-        [JsonConverter(typeof(CoordinateDictionaryConverter<List<Coordinate>>)), ProtoMember(2)]
         public Dictionary<Coordinate, List<Coordinate>> AdjacencyList { get; set; } = [];
 
-        [JsonConverter(typeof(CoordinateDictionaryConverter<Node>)), ProtoMember(3)]
         public Dictionary<Coordinate, Node> Nodes { get; set; } = [];
 
-        [ProtoMember(4)]
         public QuadTree QuadTree { get; set; }
 
 
-        [ProtoMember(5)]
+        [ProtoMember(1)]
         public Metrics AllMetrics { get; set; } = new();
 
-        [ProtoMember(6)]
+        [ProtoMember(2)]
         public Metrics UphillMetrics { get; set; } = new();
 
-        [ProtoMember(7)]
+        [ProtoMember(3)]
         public Metrics DownhillMetrics { get; set; } = new();
 
-        [ProtoMember(8)]
+        [ProtoMember(4)]
         public MetricSummary Distance { get; set; } = new();
 
-        [ProtoMember(9)]
+        [ProtoMember(5)]
         public MetricSummary ActiveTime { get; set; } = new();
 
-        [ProtoMember(10)]
+        [ProtoMember(6)]
         public MetricSummary TotalTime { get; set; } = new();
+
+        [ProtoMember(7)]
+        public List<Edge> EdgesToSerialize { get; set; } = [];
+
+        [ProtoBeforeSerialization]
+        private void OnBeforeSerialize()
+        {
+            EdgesToSerialize = new List<Edge>(Edges.Values);
+        }
+
+        [ProtoAfterDeserialization]
+        private void OnAfterDeserialize()
+        {
+            Edges = new Dictionary<EdgeKey, Edge>(EdgesToSerialize.Count);
+            foreach (var edge in EdgesToSerialize)
+            {
+                Edges[edge.EdgeKey] = edge;
+            }
+
+            EdgesToSerialize = null;
+
+            RebuildGraphIndexes();
+        }
+
+        public void RebuildGraphIndexes()
+        {
+            AdjacencyList = new Dictionary<Coordinate, List<Coordinate>>();
+            Nodes = new Dictionary<Coordinate, Node>();
+            QuadTree = new QuadTree(new BoundingBox(-180, -90, 180, 90), 0);
+
+            foreach (var edge in Edges.Values)
+            {
+                var startKey = edge.EdgeKey.StartNodeKey;
+                var endKey = edge.EdgeKey.EndNodeKey;
+
+                // Ensure nodes exist
+                if (!Nodes.ContainsKey(startKey)) Nodes[startKey] = new Node(startKey.Latitude, startKey.Longitude);
+                if (!Nodes.ContainsKey(endKey)) Nodes[endKey] = new Node(endKey.Latitude, endKey.Longitude);
+
+                // Rebuild QuadTree
+                QuadTree.AddEdge(edge, Nodes);
+
+                // Rebuild AdjacencyList
+                if (!AdjacencyList.TryGetValue(startKey, out var startList))
+                {
+                    startList = [];
+                    AdjacencyList[startKey] = startList;
+                }
+                startList.Add(endKey);
+
+                if (!AdjacencyList.TryGetValue(endKey, out var endList))
+                {
+                    endList = [];
+                    AdjacencyList[endKey] = endList;
+                }
+                endList.Add(startKey);
+            }
+        }
 
         public Graph() {}
 

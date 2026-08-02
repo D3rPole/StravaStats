@@ -2,7 +2,7 @@
 
 namespace StravaStats.BusinessObjects;
 
-[ProtoContract]
+[ProtoContract(ImplicitFields = ImplicitFields.None)]
 public class Metrics
 {
     [ProtoMember(1)]

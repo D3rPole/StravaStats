@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects;
 
-[ProtoContract]
+[ProtoContract(ImplicitFields = ImplicitFields.None)]
 public struct EdgeKey : IEquatable<EdgeKey>
 {
     [ProtoMember(1)]
@@ -64,7 +64,7 @@ public struct EdgeKey : IEquatable<EdgeKey>
     }
 }
 
-[ProtoContract]
+[ProtoContract(ImplicitFields = ImplicitFields.None)]
 public class Edge
 {
     [ProtoMember(1)]

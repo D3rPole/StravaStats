@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects
 {
-    [ProtoContract]
+    [ProtoContract(ImplicitFields = ImplicitFields.None)]
     public struct BoundingBox
     {
         [ProtoMember(1)]
@@ -44,7 +44,7 @@ namespace StravaStats.BusinessObjects
         }
     }
 
-    [ProtoContract]
+    [ProtoContract(ImplicitFields = ImplicitFields.None)]
     public class QuadTree
     {
         [JsonIgnore]

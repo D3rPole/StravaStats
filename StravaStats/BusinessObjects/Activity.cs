@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects;
 
-[ProtoContract]
+[ProtoContract(ImplicitFields = ImplicitFields.None)]
 public class Activity
 {
     [ProtoMember(1)]

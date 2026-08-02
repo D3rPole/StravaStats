@@ -2,7 +2,7 @@
 
 namespace StravaStats.BusinessObjects;
 
-[ProtoContract]
+[ProtoContract(ImplicitFields = ImplicitFields.None)]
 public struct Coordinate : IEquatable<Coordinate>
 {
     [ProtoMember(1)]
@@ -95,7 +95,7 @@ public struct Coordinate : IEquatable<Coordinate>
     }
 }
 
-[ProtoContract]
+[ProtoContract(ImplicitFields = ImplicitFields.None)]
 public class Node
 {
     [ProtoMember(1)]

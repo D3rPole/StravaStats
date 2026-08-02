@@ -34,7 +34,7 @@ namespace StravaStats.BusinessObjects
         public ActivityHeader ActivityHeader { get; set; }
     }
 
-    [ProtoContract]
+    [ProtoContract(ImplicitFields = ImplicitFields.None)]
     public class ActivityHeader
     {
         [JsonPropertyName("id"), ProtoMember(1)]
