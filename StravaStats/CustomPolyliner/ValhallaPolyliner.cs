@@ -1,10 +1,15 @@
 ﻿using PolylinerNet;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace StravaStats.CustomPolyliner
 {
     public class ValhallaPolyliner : PolylinerBase
     {
+        public static bool Equals(PolylinePoint polylinePointA, PolylinePoint polylinePointB)
+        {
+            return Math.Round(polylinePointA.Latitude, 5) == Math.Round(polylinePointB.Longitude, 5) && Math.Round(polylinePointA.Longitude, 5) == Math.Round(polylinePointB.Longitude, 5);
+        }
         public string Encode(List<PolylinePoint> polylinePoints)
         {
             StringBuilder stringBuilder = new StringBuilder();

@@ -82,11 +82,10 @@ public class Edge
     [ProtoMember(5)]
     public Metrics DownhillMetrics { get; set; } = new();
 
-    public void AddDataPoint(TrackingPoint previousPoint, TrackingPoint trackingPoint)
+    public void AddDataPoint(TrackingPoint trackingPoint)
     {
-        var dir = previousPoint.Coordinate.GetDirection(trackingPoint.Coordinate);
         AllMetrics.AddDataPoint(trackingPoint);
-        if (trackingPoint.Grade > 0) // Split be east and west direction
+        if (trackingPoint.Grade > 0)
         {
             UphillMetrics.AddDataPoint(trackingPoint);
         }

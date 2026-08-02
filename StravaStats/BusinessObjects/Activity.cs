@@ -220,19 +220,28 @@ public class Activity
         logger.LogInformation("Retrieved Valhalla response");
         MatchTrackingPointsToValhallaResponse();
 
-        response = await client.PostAsJsonAsync($"{configuration["ValhallaServer"]}/locations", new ValhallaLocations()
+        var request = new ValhallaLocations()
         {
             Locations = [
                 new ValhallaLocation() { Lat = TrackingPoints[0].Latitude, Lon = TrackingPoints[0].Longitude},
                 new ValhallaLocation() { Lat = TrackingPoints[^1].Latitude, Lon = TrackingPoints[^1].Longitude}
             ]
-        });
-        ValhallaTraceResponse.ValhallaLocationsResponse = await response.Content.ReadFromJsonAsync<ValhallaLocationsResponse>();
+        };
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+        string uri = $"{configuration["ValhallaServer"]}/locate?json={JsonSerializer.Serialize(request, options)}";
+        response = await client.GetAsync(uri);
 
         if (!response.IsSuccessStatusCode)
         {
             logger.LogError($"Valhalla locations request failed with status code: {response.StatusCode}");
-            return;
+        }
+        else
+        {
+            ValhallaTraceResponse.ValhallaLocationsResponse = await response.Content.ReadFromJsonAsync<List<ValhallaLocationsResponse>>(options);
+            logger.LogInformation("Retrieved Valhalla location response");
         }
 
         if (!Directory.Exists(cacheDir))

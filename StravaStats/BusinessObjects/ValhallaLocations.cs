@@ -1,4 +1,6 @@
 ﻿using Newtonsoft.Json;
+using PolylinerNet;
+using StravaStats.CustomPolyliner;
 
 namespace StravaStats.BusinessObjects;
 
@@ -38,4 +40,25 @@ public class ValhallaLocationsEdge
     public double CorrelatedLat { get; set; }
     [JsonProperty("correlated_lon")]
     public double CorrelatedLon { get; set; }
+
+    [JsonProperty("linear_reference")]
+    public string LinearReference { get; set; }
+
+
+    [JsonIgnore]
+    public List<PolylinePoint> NodeCoords
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(LinearReference))
+                return [];
+
+            if (field is null)
+            {
+                field = new ValhallaPolyliner().Decode(LinearReference);
+            }
+
+            return field;
+        }
+    }
 }

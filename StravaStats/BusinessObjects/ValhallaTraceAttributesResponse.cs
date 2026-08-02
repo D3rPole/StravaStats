@@ -28,12 +28,55 @@ namespace StravaStats.BusinessObjects
                     return [];
 
                 if (field is null)
+                {
                     field = new ValhallaPolyliner().Decode(Shape);
+                    field.RemoveAt(0);
+                    field.RemoveAt(field.Count - 1);
+                    /*if (ValhallaLocationsResponse is not null && ValhallaLocationsResponse.Count == 2 && field.Count > 2)
+                    {
+                        var startEdge = ValhallaLocationsResponse[0].Edges.FirstOrDefault(e =>
+                        {
+                            var first = e.NodeCoords[0];
+                            var second = e.NodeCoords[1];
+                            return ValhallaPolyliner.Equals(field[1], first) || ValhallaPolyliner.Equals(field[1], second);
+                        });
+                        var firstStart = startEdge.NodeCoords[0];
+                        var firstEnd = startEdge.NodeCoords[1];
+
+                        var endEdge = ValhallaLocationsResponse[1].Edges.FirstOrDefault(e =>
+                        {
+                            var first = e.NodeCoords[0];
+                            var second = e.NodeCoords[1];
+                            return ValhallaPolyliner.Equals(field[^2], first) || ValhallaPolyliner.Equals(field[^2], second);
+                        });
+                        var secondStart = endEdge.NodeCoords[0];
+                        var secondEnd = endEdge.NodeCoords[1];
+
+                        if (ValhallaPolyliner.Equals(field[1], firstStart))
+                        {
+                            field[0] = firstEnd;
+                        }
+                        if (ValhallaPolyliner.Equals(field[1], firstEnd))
+                        {
+                            field[0] = firstStart;
+                        }
+
+                        if (ValhallaPolyliner.Equals(field[^2], secondStart))
+                        {
+                            field[^1] = secondEnd;
+                        }
+                        if (ValhallaPolyliner.Equals(field[^2], secondEnd))
+                        {
+                            field[^1] = secondStart;
+                        }
+                    }*/
+                }
 
                 return field;
             }
         }
-        public ValhallaLocationsResponse ValhallaLocationsResponse { get; set; }
+
+        public List<ValhallaLocationsResponse>? ValhallaLocationsResponse { get; set; }
     }
 
     public class ValhallaEdge

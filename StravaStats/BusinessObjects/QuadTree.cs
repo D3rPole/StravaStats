@@ -1,4 +1,5 @@
-﻿using ProtoBuf;
+﻿using OneOf.Types;
+using ProtoBuf;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
@@ -196,6 +197,21 @@ namespace StravaStats.BusinessObjects
             else
             {
                 return [this];
+            }
+        }
+
+        public void RemoveEdge(Edge edge)
+        {
+            if (isSplit)
+            {
+                UpperLeft?.RemoveEdge(edge);
+                UpperRight?.RemoveEdge(edge);
+                DownLeft?.RemoveEdge(edge);
+                DownRight?.RemoveEdge(edge);
+            }
+            else
+            {
+                Edges.Remove(edge);
             }
         }
     }

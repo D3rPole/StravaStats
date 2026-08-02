@@ -131,19 +131,46 @@ namespace StravaStats.BusinessObjects
         {
             for (int i = 1; i < activity.TrackingPoints.Count; i++)
             {
-                var previousPoint = activity.TrackingPoints[i - 1];
                 var point = activity.TrackingPoints[i];
 
                 var closestEdge = QuadTree.GetClosestEdge(point.Latitude, point.Longitude, Nodes);
                 if (closestEdge is null)
                     continue;
 
-                closestEdge.AddDataPoint(previousPoint, point);
+                closestEdge.AddDataPoint(point);
                 closestEdge.ActivityIds.Add(activity.ActivityHeader.Id);
             }
             Distance.AddValue(activity.ActivityHeader.Distance.GetValueOrDefault());
             ActiveTime.AddValue(activity.ActivityHeader.MovingTime.GetValueOrDefault());
             TotalTime.AddValue(activity.ActivityHeader.ElapsedTime.GetValueOrDefault());
+            CleanGraph();
+        }
+
+        private void CleanGraph()
+        {
+            // Removes edges with no data
+            foreach(var edge in Edges)
+            {
+                if(edge.Value.ActivityIds.Count == 0)
+                {
+                    RemoveEdge(edge.Value);
+                }
+            }
+        }
+
+        private void RemoveEdge(Edge edge)
+        {
+            // Remove references from QuadTree, Edge list and Edgeless nodes left behind
+            QuadTree.RemoveEdge(edge);
+            Edges.Remove(edge.EdgeKey);
+
+            bool startNodeHasEdges = Edges.Any(keyValuePair => keyValuePair.Key.EndNodeKey == edge.EdgeKey.StartNodeKey || keyValuePair.Key.StartNodeKey == edge.EdgeKey.StartNodeKey);
+            if (!startNodeHasEdges)
+                Nodes.Remove(edge.EdgeKey.StartNodeKey);
+
+            bool endNodeHasEdges = Edges.Any(keyValuePair => keyValuePair.Key.EndNodeKey == edge.EdgeKey.EndNodeKey || keyValuePair.Key.StartNodeKey == edge.EdgeKey.EndNodeKey);
+            if (!endNodeHasEdges)
+                Nodes.Remove(edge.EdgeKey.EndNodeKey);
         }
 
         public void AddNode(Node node)
