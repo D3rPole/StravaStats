@@ -8,6 +8,16 @@ namespace StravaStats.Services
         public List<Account> Accounts { get; set; } = [];
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            await GetAccounts();
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+
+        }
+
+        private async Task GetAccounts()
+        {
             List<Task> tasks = [];
             foreach (var accountDir in Directory.EnumerateDirectories(AppData.AccountsDirectory))
             {
@@ -32,11 +42,6 @@ namespace StravaStats.Services
                 tasks.Add(task);
             }
             await Task.WhenAll(tasks);
-        }
-
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-
         }
     }
 }
