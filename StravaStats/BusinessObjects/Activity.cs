@@ -191,16 +191,13 @@ public class Activity
                     "edge.way_id",
                     "edge.length",
                     "edge.id",
-                    "edge.elapsed_time",
                     "matched.point",
                     "matched.type",
                     "matched.edge_index",
                     "matched.distance_along_edge",
                     "shape",
                     "edge.begin_shape_index",
-                    "edge.end_shape_index",
-                    "edge.begin_node_id",
-                    "edge.end_node_id",
+                    "edge.end_shape_index"
                 },
                 action = "include"
             }
@@ -208,7 +205,9 @@ public class Activity
 
         if (!response.IsSuccessStatusCode)
         {
-            logger.LogError($"Valhalla request failed with status code: {response.StatusCode}");
+            logger.LogError($"Valhalla trace_attributes request failed with status code: {response.StatusCode} {response.ReasonPhrase}");
+            var s = await response.Content.ReadAsStringAsync();
+            logger.LogError(s);
             return;
         }
         ValhallaTraceResponse = await response.Content.ReadFromJsonAsync<ValhallaTraceAttributesResponse>();
@@ -236,7 +235,9 @@ public class Activity
 
         if (!response.IsSuccessStatusCode)
         {
-            logger.LogError($"Valhalla locations request failed with status code: {response.StatusCode}");
+            logger.LogError($"Valhalla locations request failed with status code: {response.StatusCode} {response.ReasonPhrase}");
+            var s = await response.Content.ReadAsStringAsync();
+            logger.LogError(s);
         }
         else
         {
