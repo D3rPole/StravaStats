@@ -337,7 +337,6 @@
 </div>
 
 @code {
-    List<BaseRegion> AllRegions;
     Graph? selectedGraph;
     List<ActivityType> selectedActivityTypes
     {
@@ -689,14 +688,25 @@
             return;
 
         displayedGraph = graph;
-        await RenderRegionsViaJS(AllRegions);
+        await RenderMap();
+    }
+
+    private async Task RenderMap()
+    {
+        await RenderRegionsViaJS(displayedGraph);
         await RenderEdgesViaJS(displayedGraph);
     }
 
-    private async Task RenderRegionsViaJS(List<BaseRegion> allRegions)
+    private async Task RenderRegionsViaJS(Graph graph)
     {
         var collection = new FeatureCollection();
-        allRegions.Take(100).ToList().ForEach(r => collection.Add(r.Feature));
+        graph.CitiesPassed.ForEach(c =>
+        {
+            if (!citiesService.Cities.ContainsKey(c))
+                return;
+            var city = citiesService.Cities[c];
+            collection.Add(city.Feature);
+        });
 
         var serializer = GeoJsonSerializer.Create();
         using var sw = new StringWriter();
@@ -813,7 +823,6 @@
     {
         await base.OnInitializedAsync();
         dateRange = new RangeOf<DateOnly>(Today.AddMonths(-3), Today.AddMonths(3), null);
-        AllRegions = await citiesService.GetAllCities();
 
         UpdateGraphAction = new Func<Task>(async () =>
         {

@@ -24,6 +24,8 @@ namespace StravaStats.Services
                 DataSource = citiesFilePath,
                 Mode = SqliteOpenMode.ReadOnly
             };
+            LoadAllCities();
+            LoadAllRegions();
         }
 
         public async Task LoadAllRegions()
@@ -52,7 +54,7 @@ namespace StravaStats.Services
                 var feature = new Feature(geometry, new AttributesTable
                 {
                     { "name", name },
-                    { "fill", "rgba(0,0,0,0)" },
+                    { "fill", "rgba(0,0,0,0.1)" },
                     { "stroke", "#f00" }
                 });
 
@@ -96,8 +98,8 @@ namespace StravaStats.Services
                 var feature = new Feature(geometry, new AttributesTable
                 {
                     { "name", name },
-                    { "fill", "rgba(0,0,0,0)" },
-                    { "stroke", "#f00" }
+                    { "fill", "rgba(100,255,100,0.2)" },
+                    { "stroke", "#0f0" }
                 });
 
                 var city = new BusinessObjects.Cities.City
@@ -125,6 +127,38 @@ namespace StravaStats.Services
             if (Cities is null)
                 await LoadAllCities();
             return Cities.Select(kv => (BaseRegion)kv.Value).ToList();
+        }
+
+        public (City, Region)? GetCityByCoordinates(double lat, double lon)
+        {
+            if (Cities is null)
+                throw new InvalidOperationException("Cities data is not loaded.");
+            if(Regions is null)
+                throw new InvalidOperationException("Regions data is not loaded.");
+
+            var factory = new GeometryFactory(new PrecisionModel(), 4326);
+            Point point = factory.CreatePoint(new Coordinate(lon, lat));
+            Region? region = null;
+            foreach (var r in Regions.Values)
+            {
+                if (r.Geometry.Contains(point))
+                {
+                    region = r;
+                    break;
+                }
+            }
+            if (region is null)
+                return null;
+
+            var citiesInRegion = Cities.Values.Where(c => c.ParentId == region?.Id);
+            foreach (var city in citiesInRegion)
+            {
+                if (city.Geometry.Contains(point))
+                {
+                    return (city, region);
+                }
+            }
+            return null;
         }
     }
 }

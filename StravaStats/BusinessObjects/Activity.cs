@@ -262,6 +262,7 @@ public class Activity
             TrackingPoints[i].Latitude = coordinate.Latitude;
             TrackingPoints[i].Longitude = coordinate.Longitude;
         }
-        Graph = new Graph([this]);
+        Graph = new Graph(this);
+        Graph.CalculateCitiesPassed();
     }
 }

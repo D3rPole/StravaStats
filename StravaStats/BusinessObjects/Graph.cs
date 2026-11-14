@@ -1,6 +1,7 @@
 ﻿using NetTopologySuite.Index.KdTree;
 using PolylinerNet;
 using ProtoBuf;
+using StravaStats.BusinessObjects.Cities;
 using StravaStats.Helper;
 using StravaStats.Services;
 using System.Diagnostics;
@@ -40,6 +41,9 @@ namespace StravaStats.BusinessObjects
 
         [ProtoMember(7)]
         public List<Edge> EdgesToSerialize { get; set; } = [];
+
+        [ProtoMember(8)]
+        public List<string> CitiesPassed { get; set; } = [];
 
         [ProtoBeforeSerialization]
         private void OnBeforeSerialize()
@@ -96,7 +100,7 @@ namespace StravaStats.BusinessObjects
             }
         }
 
-        public Graph() {}
+        public Graph() { }
 
         public Graph(List<Graph> graphs)
         {
@@ -121,65 +125,64 @@ namespace StravaStats.BusinessObjects
                 Distance.AddMetric(graph.Distance);
                 ActiveTime.AddMetric(graph.ActiveTime);
                 TotalTime.AddMetric(graph.TotalTime);
+                CitiesPassed = CitiesPassed.Union(graph.CitiesPassed).ToList();
             }
         }
 
-        public Graph(List<Activity> activities)
+        public Graph(Activity activity)
         {
             QuadTree = new(new BoundingBox(-180, -90, 180, 90), 0);
             var configiration = AppData.GetService<IConfiguration>();
             double maxNodeDistance = double.Parse(configiration["MaxNodeDistance"]);
-            foreach (var activity in activities)
+            var valhallaResponse = activity.ValhallaTraceResponse;
+            if (valhallaResponse is null)
+                return;
+
+            foreach (var node in valhallaResponse.NodeCoords)
             {
-                var valhallaResponse = activity.ValhallaTraceResponse;
-                if (valhallaResponse is null)
-                    continue;
-                foreach (var node in valhallaResponse.NodeCoords)
-                {
-                    AddNode(new Node(node.Latitude, node.Longitude));
-                }
+                AddNode(new Node(node.Latitude, node.Longitude));
+            }
 
-                foreach (var edge in valhallaResponse.Edges)
-                {
-                    var crossedNodes = valhallaResponse.NodeCoords.Skip(edge.BeginShapeIndex).Take(edge.EndShapeIndex - edge.BeginShapeIndex + 1).ToList();
+            foreach (var edge in valhallaResponse.Edges)
+            {
+                var crossedNodes = valhallaResponse.NodeCoords.Skip(edge.BeginShapeIndex).Take(edge.EndShapeIndex - edge.BeginShapeIndex + 1).ToList();
 
-                    for (int i = 1; i < crossedNodes.Count; i++)
+                for (int i = 1; i < crossedNodes.Count; i++)
+                {
+                    var startNodeKey = GetNodeKey(crossedNodes[i - 1]);
+                    var endNodeKey = GetNodeKey(crossedNodes[i]);
+
+                    var startNode = Nodes[startNodeKey];
+                    var endNode = Nodes[endNodeKey];
+
+                    double nodeDistance = GeoUtils.CalculateDistance(startNode, endNode);
+
+                    if (nodeDistance < maxNodeDistance)
                     {
-                        var startNodeKey = GetNodeKey(crossedNodes[i - 1]);
-                        var endNodeKey = GetNodeKey(crossedNodes[i]);
+                        AddEdge(startNode, endNode);
+                    }
+                    else
+                    {
+                        int subDevisionCount = (int)Math.Ceiling(nodeDistance / maxNodeDistance);
+                        double step = 1.0 / subDevisionCount;
+                        var currentNode = startNode;
 
-                        var startNode = Nodes[startNodeKey];
-                        var endNode = Nodes[endNodeKey];
-
-                        double nodeDistance = GeoUtils.CalculateDistance(startNode, endNode);
-
-                        if (nodeDistance < maxNodeDistance)
+                        for (int j = 1; j < subDevisionCount; j++)
                         {
-                            AddEdge(startNode, endNode);
+                            var newNode = GeoUtils.Interpolate(startNode, endNode, step * j);
+
+                            AddNode(newNode);
+
+                            AddEdge(currentNode, newNode);
+                            currentNode = newNode;
                         }
-                        else
-                        {
-                            int subDevisionCount = (int)Math.Ceiling(nodeDistance / maxNodeDistance);
-                            double step = 1.0 / subDevisionCount;
-                            var currentNode = startNode;
 
-                            for (int j = 1; j < subDevisionCount; j++)
-                            {
-                                var newNode = GeoUtils.Interpolate(startNode, endNode, step * j);
-
-                                AddNode(newNode);
-
-                                AddEdge(currentNode, newNode);
-                                currentNode = newNode;
-                            }
-
-                            AddEdge(currentNode, endNode);
-                        }
+                        AddEdge(currentNode, endNode);
                     }
                 }
-
-                PopulateGraph(activity);
             }
+
+            PopulateGraph(activity);
         }
 
         private void PopulateGraph(Activity activity)
@@ -204,9 +207,9 @@ namespace StravaStats.BusinessObjects
         private void CleanGraph()
         {
             // Removes edges with no data
-            foreach(var edge in Edges)
+            foreach (var edge in Edges)
             {
-                if(edge.Value.ActivityIds.Count == 0)
+                if (edge.Value.ActivityIds.Count == 0)
                 {
                     RemoveEdge(edge.Value);
                 }
@@ -291,9 +294,33 @@ namespace StravaStats.BusinessObjects
             return new(node.Latitude, node.Longitude);
         }
 
-        public void CalculateRegions(CitiesService citiesService)
+        public void CalculateCitiesPassed()
         {
+            var citiesService = AppData.GetService<CitiesService>();
+            const int minNodesPerCity = 10;
+            Dictionary<string, int> cityCount = [];
+            foreach (var node in Nodes)
+            {
+                var city = citiesService.GetCityByCoordinates(node.Key.Latitude, node.Key.Longitude);
+                if (city is null)
+                    continue;
 
+                if (cityCount.ContainsKey(city.Value.Item1.Id))
+                {
+                    cityCount[city.Value.Item1.Id]++;
+                }
+                else
+                {
+                    cityCount.Add(city.Value.Item1.Id, 1);
+                }
+            }
+            foreach (var city in cityCount)
+            {
+                if (city.Value > minNodesPerCity)
+                {
+                    CitiesPassed.Add(city.Key);
+                }
+            }
         }
     }
 }
