@@ -2,6 +2,7 @@
 using PolylinerNet;
 using ProtoBuf;
 using StravaStats.Helper;
+using StravaStats.Services;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
@@ -288,6 +289,11 @@ namespace StravaStats.BusinessObjects
         private Coordinate GetNodeKey(PolylinePoint node)
         {
             return new(node.Latitude, node.Longitude);
+        }
+
+        public void CalculateRegions(CitiesService citiesService)
+        {
+
         }
     }
 }

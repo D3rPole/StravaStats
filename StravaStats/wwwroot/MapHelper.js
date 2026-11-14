@@ -3,7 +3,7 @@ function registerBlazorComponent(dotNetRef) {
     blazorComponentRef = dotNetRef;
 }
 
-window.getPixelFromCoordinate = function (x, y){
+window.getPixelFromCoordinate = function (x, y) {
     return window._myOLMap.getPixelFromCoordinate([x, y]);
 }
 
@@ -17,28 +17,45 @@ window.clearMap = function () {
     if (window._edgeLayer) {
         window._edgeLayer.getSource().clear(true);
     }
+    if (window._polyLayer) {
+        window._polyLayer.getSource().clear(true);
+    }
 }
 
 window.drawPolygons = function (json) {
-     return new Promise((resolve) => {
+    return new Promise((resolve) => {
         const map = window._myOLMap;
         if (!map) {
             resolve();
             return;
         }
+        if (!window._polyLayer) {
+            const source = new ol.source.Vector();
+            const layer = new ol.layer.Vector({
+                source: source,
+                style: (f) => getStyle({ fill: f.get('fill'), stroke: f.get('stroke') })
+            });
+            window._polyLayer = layer
+            map.addLayer(window._polyLayer);
+        }
 
-         const features = new GeoJSON().readFeatures(json, {
-             dataProjection: 'EPSG:4326',      // whatever the gpkg SRID is
-             featureProjection: 'EPSG:3857',   // map view projection
-         });
-
-         var vectorSource = new ol.source.Vector({ features: features });
-         var vectorLayer = new ol.layer.Vector({ source: vectorSource });
-        map.addLayer(vectorLayer);
-        //window._edgeLayer.getSource().addFeatures(features);
+        const features = new ol.format.GeoJSON().readFeatures(json, {
+            dataProjection: 'EPSG:4326',      // whatever the gpkg SRID is
+            featureProjection: 'EPSG:3857',   // map view projection
+        });
+        window._polyLayer.getSource().addFeatures(features);
 
         resolve();
-    })
+    });
+}
+
+const cache = {};
+function getStyle(s) {
+    const key = (s.fill || '') + '|' + (s.stroke || '') + '|' + (s.width || 1);
+    return cache[key] ??= new ol.style.Style({
+        fill: new ol.style.Fill({ color: s.fill || 'rgba(255,100,0,0.4)' }),
+        stroke: new ol.style.Stroke({ color: s.stroke || '#222', width: s.width || 1 }),
+    });
 }
 
 window.setEdges = function (flatCoords, colors) {
@@ -51,7 +68,7 @@ window.setEdges = function (flatCoords, colors) {
         } else {
             window._edgeLayer = new ol.layer.WebGLVector({
                 source: new ol.source.Vector({ useSpatialIndex: false }),
-                disableHitDetection: true,
+                disableHitDetection: false,
                 style: { 'stroke-color': ['get', 'color'], 'stroke-width': 2 }
             });
             map.addLayer(window._edgeLayer);

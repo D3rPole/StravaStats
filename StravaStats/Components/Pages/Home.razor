@@ -2,9 +2,11 @@
 @using BusinessObjects
 @using Enums
 @using Nextended.Core.Contracts
+@using NetTopologySuite.Features
 @using Nextended.Core.Types
 @using OpenLayers.Blazor
 @using Services
+@using NetTopologySuite.IO
 @using StravaStats.BusinessObjects.Cities
 @using StravaStats.Helper;
 @inject AccountService accountService
@@ -646,8 +648,7 @@
 
         markerKey = Guid.NewGuid();
         popupCoordinate = center;
-        if (popupCoordinate is not null)
-            GetPixelPos(popupCoordinate.Value);
+
         Metrics metrics;
         switch (gradeSelection)
         {
@@ -688,18 +689,21 @@
             return;
 
         displayedGraph = graph;
-        await RenderEdgesViaJS(displayedGraph);
         await RenderRegionsViaJS(AllRegions);
+        await RenderEdgesViaJS(displayedGraph);
     }
 
     private async Task RenderRegionsViaJS(List<BaseRegion> allRegions)
     {
-        var geometries = allRegions.Select(r => new
-        {
-            r.Feature
-        }).ToList();
+        var collection = new FeatureCollection();
+        allRegions.Take(100).ToList().ForEach(r => collection.Add(r.Feature));
 
-        await JS.InvokeVoidAsync("drawPolygons", geometries);
+        var serializer = GeoJsonSerializer.Create();
+        using var sw = new StringWriter();
+        serializer.Serialize(sw, collection);
+        string json = sw.ToString();
+
+        await JS.InvokeVoidAsync("drawPolygons", json);
     }
 
     private async Task RenderEdgesViaJS(Graph targetGraph)
@@ -809,7 +813,7 @@
     {
         await base.OnInitializedAsync();
         dateRange = new RangeOf<DateOnly>(Today.AddMonths(-3), Today.AddMonths(3), null);
-        AllRegions = await citiesService.GetAllRegionsAsync();
+        AllRegions = await citiesService.GetAllCities();
 
         UpdateGraphAction = new Func<Task>(async () =>
         {
@@ -848,10 +852,5 @@
     {
         var objRef = DotNetObjectReference.Create(this);
         await JS.InvokeVoidAsync("registerBlazorComponent", objRef);
-    }
-
-    private async Task GetPixelPos(OpenLayers.Blazor.Coordinate coordinate)
-    {
-        //var str = await JS.InvokeAsync<string>("getPixelFromCoordinate", coordinate.Longitude, coordinate.Latitude);
     }
 }
