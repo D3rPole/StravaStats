@@ -1,5 +1,4 @@
 using MudBlazor.Extensions;
-using MudBlazor.Services;
 using StravaStats.Components;
 using StravaStats.Services;
 
@@ -16,6 +15,7 @@ builder.Services.AddSingleton<ActivityService>();
 builder.Services.AddSingleton<AccountService>();
 builder.Services.AddSingleton<StravaService>();
 builder.Services.AddSingleton<AppDbContext>();
+builder.Services.AddSingleton<CitiesService>();
 
 builder.Services.AddHostedService(provider => provider.GetRequiredService<AccountService>());
 
