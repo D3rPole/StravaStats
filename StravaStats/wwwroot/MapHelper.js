@@ -19,10 +19,26 @@ window.clearMap = function () {
     }
 }
 
-window.clearMap = function () {
-    if (window._edgeLayer) {
-        window._edgeLayer.getSource().clear(true);
-    }
+window.drawPolygons = function (json) {
+     return new Promise((resolve) => {
+        const map = window._myOLMap;
+        if (!map) {
+            resolve();
+            return;
+        }
+
+         const features = new GeoJSON().readFeatures(json, {
+             dataProjection: 'EPSG:4326',      // whatever the gpkg SRID is
+             featureProjection: 'EPSG:3857',   // map view projection
+         });
+
+         var vectorSource = new ol.source.Vector({ features: features });
+         var vectorLayer = new ol.layer.Vector({ source: vectorSource });
+        map.addLayer(vectorLayer);
+        //window._edgeLayer.getSource().addFeatures(features);
+
+        resolve();
+    })
 }
 
 window.setEdges = function (flatCoords, colors) {

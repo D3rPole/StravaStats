@@ -1,12 +1,14 @@
 ﻿@page "/"
+@using BusinessObjects
+@using Enums
 @using Nextended.Core.Contracts
 @using Nextended.Core.Types
 @using OpenLayers.Blazor
-@using StravaStats.Helper;
 @using Services
-@using BusinessObjects
-@using Enums
+@using StravaStats.BusinessObjects.Cities
+@using StravaStats.Helper;
 @inject AccountService accountService
+@inject CitiesService citiesService
 @inject IConfiguration configuration
 @inject IJSRuntime JS
 @inject ILogger<Home> logger
@@ -333,6 +335,7 @@
 </div>
 
 @code {
+    List<BaseRegion> AllRegions;
     Graph? selectedGraph;
     List<ActivityType> selectedActivityTypes
     {
@@ -686,6 +689,17 @@
 
         displayedGraph = graph;
         await RenderEdgesViaJS(displayedGraph);
+        await RenderRegionsViaJS(AllRegions);
+    }
+
+    private async Task RenderRegionsViaJS(List<BaseRegion> allRegions)
+    {
+        var geometries = allRegions.Select(r => new
+        {
+            r.Feature
+        }).ToList();
+
+        await JS.InvokeVoidAsync("drawPolygons", geometries);
     }
 
     private async Task RenderEdgesViaJS(Graph targetGraph)
@@ -795,6 +809,7 @@
     {
         await base.OnInitializedAsync();
         dateRange = new RangeOf<DateOnly>(Today.AddMonths(-3), Today.AddMonths(3), null);
+        AllRegions = await citiesService.GetAllRegionsAsync();
 
         UpdateGraphAction = new Func<Task>(async () =>
         {
