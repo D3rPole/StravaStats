@@ -705,7 +705,13 @@
             if (!citiesService.Cities.ContainsKey(c))
                 return;
             var city = citiesService.Cities[c];
-            collection.Add(city.Feature);
+            var feature = new NetTopologySuite.Features.Feature(city.Geometry, new AttributesTable
+                {
+                    { "name", city.Name },
+                    { "fill", "rgba(0,255,0,0.2)" },
+                    { "stroke", "#0f0" }
+                });
+            collection.Add(feature);
         });
 
         var serializer = GeoJsonSerializer.Create();

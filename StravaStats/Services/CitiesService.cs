@@ -51,17 +51,10 @@ namespace StravaStats.Services
                 string id = reader.GetString(2);
                 string name = reader.GetString(3);
                 string country = reader.GetString(4);
-                var feature = new Feature(geometry, new AttributesTable
-                {
-                    { "name", name },
-                    { "fill", "rgba(0,0,0,0.1)" },
-                    { "stroke", "#f00" }
-                });
 
                 var region = new BusinessObjects.Cities.Region
                 {
                     Geometry = geometry,
-                    Feature = feature,
                     Id = id,
                     Name = name,
                     Country = country
@@ -95,17 +88,10 @@ namespace StravaStats.Services
                 string name = reader.GetString(3);
                 string country = reader.GetString(4);
                 string parent = reader.GetString(5);
-                var feature = new Feature(geometry, new AttributesTable
-                {
-                    { "name", name },
-                    { "fill", "rgba(100,255,100,0.2)" },
-                    { "stroke", "#0f0" }
-                });
 
                 var city = new BusinessObjects.Cities.City
                 {
                     Geometry = geometry,
-                    Feature = feature,
                     Id = id,
                     Name = name,
                     ParentId = parent
