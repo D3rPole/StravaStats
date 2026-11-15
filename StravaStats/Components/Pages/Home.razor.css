@@ -34,53 +34,28 @@
     }
 }
 
+.page-root {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh; 
+}
+
+.page-head {
+    flex: 0 0 auto;
+}
+
+.page-body {
+    flex: 1 1 0; 
+    min-height: 0; 
+    overflow: hidden;
+}
+
 .my-map-container {
-    position: relative;
-    height: 500px;
+    flex: 1 1 0;
+    min-height: 0;
     min-width: auto !important;
-    width: 70% !important;
 }
 
     .my-map-container ::deep #map {
-        border: 0px;
-        height: 500px;
-    }
-
-    .my-map-container ::deep .stats-overlay {
-        position: absolute;
-        top: 8px;
-        left: 36px;
-        z-index: 999;
-        padding: 8px;
-        border-radius: 16px;
-        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-        width: 100px;
-        min-width: 0;
-    }
-
-        .my-map-container ::deep .stats-overlay.enabled {
-            width: 300px;
-        }
-
-    .my-map-container ::deep .activities-list {
-        max-height: 100%;
-        margin: 4px;
-        overflow-y: auto;
-    }
-
-    .my-map-container ::deep .activities-list-card {
-        position: absolute;
-        top: 0px;
-        right: 0px;
-        width: 150px;
         height: 100%;
-        padding: 8px;
-        z-index: 999;
-        min-width: 0px;
-        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .my-map-container ::deep .activities-list-card.enabled {
-        width: 600px;
     }
