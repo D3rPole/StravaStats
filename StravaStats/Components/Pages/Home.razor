@@ -11,7 +11,7 @@
 @using StravaStats.Components.Pages.Tabs
 @using StravaStats.Helper;
 @inject AccountService accountService
-@inject CitiesService citiesService
+@inject RegionService citiesService
 @inject IConfiguration configuration
 @inject IJSRuntime JS
 @inject ILogger<Home> logger
@@ -231,7 +231,7 @@
                     <Stats selectedGraph="@selectedGraph" selectedMetrics="@selectedMetrics" />
                 </MudTabPanel>
                 <MudTabPanel Text="Regions">
-                    <Regions />
+                    <Regions SelectedGraph="@selectedGraph" />
                 </MudTabPanel>
             </MudTabs>
         </div>

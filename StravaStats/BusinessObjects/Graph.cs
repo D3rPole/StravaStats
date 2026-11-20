@@ -45,6 +45,9 @@ namespace StravaStats.BusinessObjects
         [ProtoMember(8)]
         public List<string> CitiesPassed { get; set; } = [];
 
+        [ProtoMember(9)]
+        public List<string> RegionsPassed { get; set; } = [];
+
         [ProtoBeforeSerialization]
         private void OnBeforeSerialize()
         {
@@ -126,6 +129,7 @@ namespace StravaStats.BusinessObjects
                 ActiveTime.AddMetric(graph.ActiveTime);
                 TotalTime.AddMetric(graph.TotalTime);
                 CitiesPassed = CitiesPassed.Union(graph.CitiesPassed).ToList();
+                RegionsPassed = RegionsPassed.Union(graph.RegionsPassed).ToList();
             }
         }
 
@@ -296,7 +300,7 @@ namespace StravaStats.BusinessObjects
 
         public void CalculateCitiesPassed()
         {
-            var citiesService = AppData.GetService<CitiesService>();
+            var citiesService = AppData.GetService<RegionService>();
             const int minNodesPerCity = 10;
             Dictionary<string, int> cityCount = [];
             foreach (var node in Nodes)
@@ -319,6 +323,12 @@ namespace StravaStats.BusinessObjects
                 if (city.Value > minNodesPerCity)
                 {
                     CitiesPassed.Add(city.Key);
+                    string? regionId = citiesService.GetCity(city.Key)?.ParentId;
+                    if (string.IsNullOrWhiteSpace(regionId))
+                        continue;
+                    if (RegionsPassed.Contains(regionId))
+                        continue;
+                    RegionsPassed.Add(regionId);
                 }
             }
         }

@@ -6,13 +6,13 @@ using StravaStats.BusinessObjects.Cities;
 
 namespace StravaStats.Services
 {
-    public class CitiesService
+    public class RegionService
     {
         SqliteConnectionStringBuilder? connectionStringBuilder;
         public Dictionary<string, Region> Regions;
         public Dictionary<string, City> Cities;
 
-        public CitiesService(IConfiguration configuration)
+        public RegionService(IConfiguration configuration)
         {
             string citiesFilePath = configuration.GetValue<string>("CitiesFile");
             if (string.IsNullOrWhiteSpace(citiesFilePath) || !File.Exists(citiesFilePath))
@@ -103,21 +103,32 @@ namespace StravaStats.Services
 
         public List<BaseRegion> GetRegions()
         {
-            return GetAllRegionsAsync().GetAwaiter().GetResult();
+            return GetRegionsAsync().GetAwaiter().GetResult();
         }
 
-        public async Task<List<BaseRegion>> GetAllRegionsAsync()
+        public async Task<List<BaseRegion>> GetRegionsAsync()
         {
             if (Regions is null)
                 await LoadAllRegions();
             return Regions.Select(kv => (BaseRegion)kv.Value).ToList();
         }
 
-        public async Task<List<BaseRegion>> GetAllCities()
+        public async Task<List<BaseRegion>> GetCitiesAsync()
         {
             if (Cities is null)
                 await LoadAllCities();
             return Cities.Select(kv => (BaseRegion)kv.Value).ToList();
+        }
+
+        public List<BaseRegion> GetCities()
+        {
+            return GetCitiesAsync().GetAwaiter().GetResult();
+        }
+
+        public City? GetCity(string id)
+        {
+            var cities = GetCities();
+            return cities.FirstOrDefault(c => c.Id == id) as City;
         }
 
         public (City, Region)? GetCityByCoordinates(double lat, double lon)

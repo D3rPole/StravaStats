@@ -1,8 +1,9 @@
-﻿@using StravaStats.Services
+﻿@using StravaStats.BusinessObjects
 @using StravaStats.BusinessObjects.Cities
-@inject CitiesService CitiesService
+@using StravaStats.Services
+@inject RegionService CitiesService
 
-<MudDataGrid T="Region" Items="regions">
+<MudDataGrid T="Region" Items="regions" MultiSelection SelectedItemsChanged="@SelectedRegionsChanged" SelectedItems="@SelectedRegions">
     <Columns>
         <SelectColumn T="Region" />
         <TemplateColumn Title="Name" Sortable="true" SortBy="x => x.Name">
@@ -10,9 +11,14 @@
                 <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Name</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Type" Sortable="true" SortBy="x => x.Country">
+        <TemplateColumn Title="Country" Sortable="true" SortBy="x => x.Country">
             <CellTemplate>
                 <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Country</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Passed through" Sortable="true" SortBy="x => passedRegions.Any(r => r.Id == x.Id)">
+            <CellTemplate>
+                <MudCheckBox ReadOnly Value="passedRegions.Any(r => r.Id == context.Item.Id)" />
             </CellTemplate>
         </TemplateColumn>
     </Columns>
@@ -23,4 +29,26 @@
         .Where(r => r is not null && r is Region)
         .Select(r => r as Region)
         .ToList<Region>();
+
+    List<City> cities => CitiesService.GetCities()
+        .Where(r => r is not null && r is City)
+        .Select(r => r as City)
+        .ToList<City>();
+
+    [Parameter] public HashSet<Region> SelectedRegions { get; set; }
+    [Parameter] public EventCallback<HashSet<Region>> SelectedRegionsChanged { get; set; }
+
+    HashSet<Region> passedRegions = [];
+
+    [Parameter, EditorRequired] public Graph SelectedGraph { get => field; set { field = value; UpdatePassedRegions(); } }
+
+    private void UpdatePassedRegions()
+    {
+        if(SelectedGraph is null)
+        {
+            passedRegions = [];
+            return;
+        }
+        passedRegions = regions.Where(r => SelectedGraph.RegionsPassed.Any(rp => rp == r.Id)).ToHashSet();
+    }
 }

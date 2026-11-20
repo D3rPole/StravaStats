@@ -15,7 +15,7 @@ builder.Services.AddSingleton<ActivityService>();
 builder.Services.AddSingleton<AccountService>();
 builder.Services.AddSingleton<StravaService>();
 builder.Services.AddSingleton<AppDbContext>();
-builder.Services.AddSingleton<CitiesService>();
+builder.Services.AddSingleton<RegionService>();
 
 builder.Services.AddHostedService(provider => provider.GetRequiredService<AccountService>());
 
