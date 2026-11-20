@@ -1,0 +1,88 @@
+﻿@using StravaStats.BusinessObjects
+@if (selectedMetrics is not null && selectedGraph is not null)
+{
+    <MudSimpleTable Dense>
+        <thead>
+            <tr>
+                <th></th>
+                <th>Minumum</th>
+                <th>Maximum</th>
+                <th>Total</th>
+                <th>Average</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Distance</td>
+                <td>@($"{(selectedGraph.Distance.MinValue / 1000):F2}") Km</td>
+                <td>@($"{(selectedGraph.Distance.MaxValue / 1000):F2}") Km</td>
+                <td>@($"{(selectedGraph.Distance.Total / 1000):F2}") Km</td>
+                <td>@($"{(selectedGraph.Distance.Average / 1000):F2}") Km</td>
+            </tr>
+            <tr>
+                <td>Velocity</td>
+                <td>@($"{selectedMetrics.Speed.MinValue:F2}") Km/h</td>
+                <td>@($"{selectedMetrics.Speed.MaxValue:F2}") Km/h</td>
+                <td></td>
+                <td>@($"{selectedMetrics.Speed.Average:F2}") Km/h</td>
+            </tr>
+            <tr>
+                <td>Heartrate</td>
+                <td>@($"{selectedMetrics.HeartRate.MinValue:F2}") BPM</td>
+                <td>@($"{selectedMetrics.HeartRate.MaxValue:F2}") BPM</td>
+                <td></td>
+                <td>@($"{selectedMetrics.HeartRate.Average:F2}") BPM</td>
+            </tr>
+            <tr>
+                <td>Wattage</td>
+                <td>@($"{selectedMetrics.Wattage.MinValue:F2}") W</td>
+                <td>@($"{selectedMetrics.Wattage.MaxValue:F2}") W</td>
+                <td></td>
+                <td>@($"{selectedMetrics.Wattage.Average:F2}") W</td>
+            </tr>
+            <tr>
+                <td>Acceleration</td>
+                <td>@($"{selectedMetrics.Acceleration.MinValue:F2}") m/s²</td>
+                <td>@($"{selectedMetrics.Acceleration.MaxValue:F2}") m/s²</td>
+                <td></td>
+                <td> @($"{selectedMetrics.Acceleration.Average:F2}") m/s²</td>
+            </tr>
+            <tr>
+                <td>Time</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MinValue):hh\\:mm\\:ss}")</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MaxValue):hh\\:mm\\:ss}")</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Total):hh\\:mm\\:ss}")</td>
+                <td> @($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Average):hh\\:mm\\:ss}")</td>
+            </tr>
+            <tr>
+                <td>Active time</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.MinValue):hh\\:mm\\:ss}")</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.MaxValue):hh\\:mm\\:ss}")</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.Total):hh\\:mm\\:ss}")</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.Average):hh\\:mm\\:ss}")</td>
+            </tr>
+            <tr>
+                <td>Paused time</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MinValue - selectedGraph.ActiveTime.MinValue):hh\\:mm\\:ss}")</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MaxValue - selectedGraph.ActiveTime.MaxValue):hh\\:mm\\:ss}")</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Total - selectedGraph.ActiveTime.Total):hh\\:mm\\:ss}")</td>
+                <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Average - selectedGraph.ActiveTime.Average):hh\\:mm\\:ss}")</td>
+            </tr>
+            <tr>
+                <td>Grade</td>
+                <td>@($"{selectedMetrics.Grade.MinValue:F2}") %</td>
+                <td>@($"{selectedMetrics.Grade.MaxValue:F2}") %</td>
+                <td></td>
+                <td>@($"{selectedMetrics.Grade.Average:F2}") %</td>
+            </tr>
+        </tbody>
+    </MudSimpleTable>
+    <MudText Class="pa-2" Typo="Typo.body2">Pause Per Kilometer: @($"{TimeSpan.FromSeconds((selectedGraph.TotalTime.Total - selectedGraph.ActiveTime.Total) / selectedGraph.Distance.Total * 1000):ss' seconds'}")</MudText>
+}
+
+@code {
+    [Parameter]
+    public Graph selectedGraph { get; set; }
+    [Parameter]
+    public Metrics selectedMetrics { get; set; }
+}

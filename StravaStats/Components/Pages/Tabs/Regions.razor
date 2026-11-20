@@ -1,0 +1,26 @@
+﻿@using StravaStats.Services
+@using StravaStats.BusinessObjects.Cities
+@inject CitiesService CitiesService
+
+<MudDataGrid T="Region" Items="regions">
+    <Columns>
+        <SelectColumn T="Region" />
+        <TemplateColumn Title="Name" Sortable="true" SortBy="x => x.Name">
+            <CellTemplate>
+                <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Name</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Type" Sortable="true" SortBy="x => x.Country">
+            <CellTemplate>
+                <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Country</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    List<Region> regions => CitiesService.GetRegions()
+        .Where(r => r is not null && r is Region)
+        .Select(r => r as Region)
+        .ToList<Region>();
+}

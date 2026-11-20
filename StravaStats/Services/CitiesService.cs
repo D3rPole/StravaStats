@@ -101,6 +101,11 @@ namespace StravaStats.Services
             }
         }
 
+        public List<BaseRegion> GetRegions()
+        {
+            return GetAllRegionsAsync().GetAwaiter().GetResult();
+        }
+
         public async Task<List<BaseRegion>> GetAllRegionsAsync()
         {
             if (Regions is null)

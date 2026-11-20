@@ -1,0 +1,54 @@
+﻿@using StravaStats.BusinessObjects
+@using StravaStats.Enums;
+
+@if (selectedAccount is not null && selectedAccount.SelectedActivities is not null)
+{
+    <MudDataGrid Class="grid-fill"
+                 Dense="true" T="Activity"
+                 MultiSelection="true"
+                 Items="selectedAccount.SelectedActivities"
+                 SelectedItems="@SelectedActivities"
+                 SelectedItemsChanged="@SelectedActivitiesChanged">
+        <Columns>
+            <SelectColumn T="Activity" />
+            <TemplateColumn Title="Name" Sortable="true" SortBy="x => x.ActivityHeader.Name">
+                <CellTemplate>
+                    <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.ActivityHeader.Id</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Type" Sortable="true" SortBy="x => x.ActivityHeader.SportType">
+                <CellTemplate>
+                    <MudIcon Icon="@context.Item.ActivityHeader.ActivityType.GetIcon()" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Distance" Sortable="true" SortBy="x => x.ActivityHeader.Distance">
+                <CellTemplate>
+                    @($"{context.Item.ActivityHeader.Distance / 1000.0:F2} Km")
+                </CellTemplate>
+            </TemplateColumn>
+            @if (popupActivities is not null && popupActivities.Count > 0)
+            {
+                <TemplateColumn Title="Selected" Sortable="true" SortBy="x => (popupActivities != null && popupActivities.Contains(x.ActivityHeader.Id)) ? 1 : 0">
+                    <CellTemplate>
+                        @if (popupActivities is not null && popupActivities.Contains(context.Item.ActivityHeader.Id))
+                        {
+                            <MudIcon Icon="@MudBlazor.Icons.Material.Filled.LocationOn" Color="MudBlazor.Color.Primary" />
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+            }
+            <TemplateColumn Title="Date" Sortable="true" SortBy="x => x.ActivityHeader.StartDate">
+                <CellTemplate>
+                    <MudText Style="text-wrap: nowrap" Typo="Typo.body1">@($"{context.Item.ActivityHeader.StartDate:dd.MM.yyyy}")</MudText>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+}
+
+@code {
+    [Parameter] public Account selectedAccount { get; set; }
+    [Parameter] public HashSet<Activity> SelectedActivities { get; set; }
+    [Parameter] public EventCallback<HashSet<Activity>> SelectedActivitiesChanged { get; set; }
+    [Parameter] public HashSet<long> popupActivities { get; set; }
+}

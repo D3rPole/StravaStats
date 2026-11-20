@@ -8,6 +8,7 @@
 @using Services
 @using NetTopologySuite.IO
 @using StravaStats.BusinessObjects.Cities
+@using StravaStats.Components.Pages.Tabs
 @using StravaStats.Helper;
 @inject AccountService accountService
 @inject CitiesService citiesService
@@ -222,127 +223,15 @@
         <div style="width: 30%; min-width: 600px; max-width: 800px;max-height:100%;">
             <MudTabs Class="tabs-fill">
                 <MudTabPanel Text="Activities">
-                    @if (selectedAccount is not null && selectedAccount.SelectedActivities is not null)
-                    {
-                        <MudDataGrid Class="grid-fill" Dense="true" T="Activity" MultiSelection="true" Items="selectedAccount.SelectedActivities" @bind-SelectedItems="SelectedActivities">
-                            <Columns>
-                                <SelectColumn T="Activity" />
-                                <TemplateColumn Title="Name" Sortable="true" SortBy="x => x.ActivityHeader.Name">
-                                    <CellTemplate>
-                                        <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.ActivityHeader.Id</MudText>
-                                    </CellTemplate>
-                                </TemplateColumn>
-                                <TemplateColumn Title="Type" Sortable="true" SortBy="x => x.ActivityHeader.SportType">
-                                    <CellTemplate>
-                                        <MudIcon Icon="@context.Item.ActivityHeader.ActivityType.GetIcon()" />
-                                    </CellTemplate>
-                                </TemplateColumn>
-                                <TemplateColumn Title="Distance" Sortable="true" SortBy="x => x.ActivityHeader.Distance">
-                                    <CellTemplate>
-                                        @($"{context.Item.ActivityHeader.Distance / 1000.0:F2} Km")
-                                    </CellTemplate>
-                                </TemplateColumn>
-                                @if (popupActivities is not null && popupActivities.Count > 0)
-                                {
-                                    <TemplateColumn Title="Selected" Sortable="true" SortBy="x => (popupActivities != null && popupActivities.Contains(x.ActivityHeader.Id)) ? 1 : 0">
-                                        <CellTemplate>
-                                            @if (popupActivities is not null && popupActivities.Contains(context.Item.ActivityHeader.Id))
-                                            {
-                                                <MudIcon Icon="@MudBlazor.Icons.Material.Filled.LocationOn" Color="MudBlazor.Color.Primary" />
-                                            }
-                                        </CellTemplate>
-                                    </TemplateColumn>
-                                }
-                                <TemplateColumn Title="Date" Sortable="true" SortBy="x => x.ActivityHeader.StartDate">
-                                    <CellTemplate>
-                                        <MudText Style="text-wrap: nowrap" Typo="Typo.body1">@($"{context.Item.ActivityHeader.StartDate:dd.MM.yyyy}")</MudText>
-                                    </CellTemplate>
-                                </TemplateColumn>
-                            </Columns>
-                        </MudDataGrid>
-                    }
+                    <Activities selectedAccount="@selectedAccount"
+                                @bind-SelectedActivities="@SelectedActivities"
+                                popupActivities="@popupActivities" />
                 </MudTabPanel>
                 <MudTabPanel Text="Stats" Disabled="@(selectedMetrics is null || selectedGraph is null)">
-                    @if (selectedMetrics is not null && selectedGraph is not null)
-                    {
-                        <MudSimpleTable Dense>
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>Minumum</th>
-                                    <th>Maximum</th>
-                                    <th>Total</th>
-                                    <th>Average</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Distance</td>
-                                    <td>@($"{(selectedGraph.Distance.MinValue / 1000):F2}") Km</td>
-                                    <td>@($"{(selectedGraph.Distance.MaxValue / 1000):F2}") Km</td>
-                                    <td>@($"{(selectedGraph.Distance.Total / 1000):F2}") Km</td>
-                                    <td>@($"{(selectedGraph.Distance.Average / 1000):F2}") Km</td>
-                                </tr>
-                                <tr>
-                                    <td>Velocity</td>
-                                    <td>@($"{selectedMetrics.Speed.MinValue:F2}") Km/h</td>
-                                    <td>@($"{selectedMetrics.Speed.MaxValue:F2}") Km/h</td>
-                                    <td></td>
-                                    <td>@($"{selectedMetrics.Speed.Average:F2}") Km/h</td>
-                                </tr>
-                                <tr>
-                                    <td>Heartrate</td>
-                                    <td>@($"{selectedMetrics.HeartRate.MinValue:F2}") BPM</td>
-                                    <td>@($"{selectedMetrics.HeartRate.MaxValue:F2}") BPM</td>
-                                    <td></td>
-                                    <td>@($"{selectedMetrics.HeartRate.Average:F2}") BPM</td>
-                                </tr>
-                                <tr>
-                                    <td>Wattage</td>
-                                    <td>@($"{selectedMetrics.Wattage.MinValue:F2}") W</td>
-                                    <td>@($"{selectedMetrics.Wattage.MaxValue:F2}") W</td>
-                                    <td></td>
-                                    <td>@($"{selectedMetrics.Wattage.Average:F2}") W</td>
-                                </tr>
-                                <tr>
-                                    <td>Acceleration</td>
-                                    <td>@($"{selectedMetrics.Acceleration.MinValue:F2}") m/s²</td>
-                                    <td>@($"{selectedMetrics.Acceleration.MaxValue:F2}") m/s²</td>
-                                    <td></td>
-                                    <td> @($"{selectedMetrics.Acceleration.Average:F2}") m/s²</td>
-                                </tr>
-                                <tr>
-                                    <td>Time</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MinValue):hh\\:mm\\:ss}")</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MaxValue):hh\\:mm\\:ss}")</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Total):hh\\:mm\\:ss}")</td>
-                                    <td> @($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Average):hh\\:mm\\:ss}")</td>
-                                </tr>
-                                <tr>
-                                    <td>Active time</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.MinValue):hh\\:mm\\:ss}")</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.MaxValue):hh\\:mm\\:ss}")</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.Total):hh\\:mm\\:ss}")</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.ActiveTime.Average):hh\\:mm\\:ss}")</td>
-                                </tr>
-                                <tr>
-                                    <td>Paused time</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MinValue - selectedGraph.ActiveTime.MinValue):hh\\:mm\\:ss}")</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.MaxValue - selectedGraph.ActiveTime.MaxValue):hh\\:mm\\:ss}")</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Total - selectedGraph.ActiveTime.Total):hh\\:mm\\:ss}")</td>
-                                    <td>@($"{TimeSpan.FromSeconds(selectedGraph.TotalTime.Average - selectedGraph.ActiveTime.Average):hh\\:mm\\:ss}")</td>
-                                </tr>
-                                <tr>
-                                    <td>Grade</td>
-                                    <td>@($"{selectedMetrics.Grade.MinValue:F2}") %</td>
-                                    <td>@($"{selectedMetrics.Grade.MaxValue:F2}") %</td>
-                                    <td></td>
-                                    <td>@($"{selectedMetrics.Grade.Average:F2}") %</td>
-                                </tr>
-                            </tbody>
-                        </MudSimpleTable>
-                        <MudText Class="pa-2" Typo="Typo.body2">Pause Per Kilometer: @($"{TimeSpan.FromSeconds((selectedGraph.TotalTime.Total - selectedGraph.ActiveTime.Total) / selectedGraph.Distance.Total * 1000):ss' seconds'}")</MudText>
-                    }
+                    <Stats selectedGraph="@selectedGraph" selectedMetrics="@selectedMetrics" />
+                </MudTabPanel>
+                <MudTabPanel Text="Regions">
+                    <Regions />
                 </MudTabPanel>
             </MudTabs>
         </div>
