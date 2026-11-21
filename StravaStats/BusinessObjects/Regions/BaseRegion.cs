@@ -1,7 +1,7 @@
 ﻿using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 
-namespace StravaStats.BusinessObjects.Cities
+namespace StravaStats.BusinessObjects.Regions
 {
     public abstract class BaseRegion
     {

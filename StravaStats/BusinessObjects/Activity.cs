@@ -255,7 +255,6 @@ public class Activity
 
     private void MatchTrackingPointsToValhallaResponse()
     {
-        int a = 0;
         for (int i = 0; i < TrackingPoints.Count; i++)
         {
             Coordinate coordinate = new(ValhallaTraceResponse.MatchedPoints[i].Lat, ValhallaTraceResponse.MatchedPoints[i].Lon);

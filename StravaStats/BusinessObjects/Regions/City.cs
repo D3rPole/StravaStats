@@ -1,4 +1,4 @@
-﻿namespace StravaStats.BusinessObjects.Cities
+﻿namespace StravaStats.BusinessObjects.Regions
 {
     public class City : BaseRegion
     {

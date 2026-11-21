@@ -2,7 +2,7 @@
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
-using StravaStats.BusinessObjects.Cities;
+using StravaStats.BusinessObjects.Regions;
 
 namespace StravaStats.Services
 {
@@ -52,7 +52,7 @@ namespace StravaStats.Services
                 string name = reader.GetString(3);
                 string country = reader.GetString(4);
 
-                var region = new BusinessObjects.Cities.Region
+                var region = new BusinessObjects.Regions.Region
                 {
                     Geometry = geometry,
                     Id = id,
@@ -89,7 +89,7 @@ namespace StravaStats.Services
                 string country = reader.GetString(4);
                 string parent = reader.GetString(5);
 
-                var city = new BusinessObjects.Cities.City
+                var city = new BusinessObjects.Regions.City
                 {
                     Geometry = geometry,
                     Id = id,

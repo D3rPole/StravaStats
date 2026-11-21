@@ -188,10 +188,10 @@ namespace StravaStats.BusinessObjects
             if (isSplit)
             {
                 var result = new List<QuadTree>();
-                result.AddRange(UpperLeft.GetAllLeaves());
-                result.AddRange(UpperRight.GetAllLeaves());
-                result.AddRange(DownLeft.GetAllLeaves());
-                result.AddRange(DownRight.GetAllLeaves());
+                result.AddRange(UpperLeft?.GetAllLeaves() ?? []);
+                result.AddRange(UpperRight?.GetAllLeaves() ?? []);
+                result.AddRange(DownLeft?.GetAllLeaves() ?? []);
+                result.AddRange(DownRight?.GetAllLeaves() ?? []);
                 return result;
             }
             else

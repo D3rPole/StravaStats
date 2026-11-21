@@ -1,22 +1,33 @@
 ﻿@using StravaStats.BusinessObjects
-@using StravaStats.BusinessObjects.Cities
+@using StravaStats.BusinessObjects.Regions
 @using StravaStats.Services
 @inject RegionService CitiesService
 
-<MudDataGrid T="Region" Items="regions" MultiSelection SelectedItemsChanged="@SelectedRegionsChanged" SelectedItems="@SelectedRegions">
+<MudDataGrid SortMode="SortMode.Single" T="Region" Items="regions" MultiSelection SelectedItemsChanged="@SelectedRegionsChanged" SelectedItems="@SelectedRegions">
     <Columns>
         <SelectColumn T="Region" />
-        <TemplateColumn Title="Name" Sortable="true" SortBy="x => x.Name">
+        <TemplateColumn Title="Name"
+                        Sortable="true"
+                        SortBy="x => x.Name">
             <CellTemplate>
-                <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Name</MudText>
+                <MudText Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Name</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Country" Sortable="true" SortBy="x => x.Country">
+        <TemplateColumn HeaderStyle="width: 80px;"
+                        CellStyle="width:80px;"
+                        Title="Country"
+                        Sortable="true"
+                        SortBy="x => x.Country">
             <CellTemplate>
-                <MudText Style="width: 150px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Country</MudText>
+                <MudText Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Country</MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Passed through" Sortable="true" SortBy="x => passedRegions.Any(r => r.Id == x.Id)">
+        <TemplateColumn HeaderStyle="width: 150px;"
+                        CellStyle="width:150px;"
+                        InitialDirection="SortDirection.Descending"
+                        Title="Passed through"
+                        Sortable="true"
+                        SortBy="x => passedRegions.Any(r => r.Id == x.Id)">
             <CellTemplate>
                 <MudCheckBox ReadOnly Value="passedRegions.Any(r => r.Id == context.Item.Id)" />
             </CellTemplate>
@@ -44,7 +55,7 @@
 
     private void UpdatePassedRegions()
     {
-        if(SelectedGraph is null)
+        if (SelectedGraph is null)
         {
             passedRegions = [];
             return;

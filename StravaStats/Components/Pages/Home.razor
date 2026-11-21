@@ -7,7 +7,6 @@
 @using OpenLayers.Blazor
 @using Services
 @using NetTopologySuite.IO
-@using StravaStats.BusinessObjects.Cities
 @using StravaStats.Components.Pages.Tabs
 @using StravaStats.Helper;
 @inject AccountService accountService
@@ -105,9 +104,10 @@
                     </MudSelectItem>
                 }
             </MudSelect>
+            <MudButton StartIcon="@Icons.Material.Filled.Menu" OnClick="DrawerClick" />
         </div>
     </MudCard>
-    <div class="d-inline-flex page-body pa-2" style="width:100%;">
+    <MudDrawerContainer Class="d-inline-flex page-body pa-2" style="width:100%;">
         <div class="my-map-container flex-grow-1">
             @if (isLoading)
             {
@@ -220,25 +220,32 @@
                 </Map>
             </div>
         </div>
-        <div style="width: 30%; min-width: 600px; max-width: 800px;max-height:100%;">
-            <MudTabs Class="tabs-fill">
-                <MudTabPanel Text="Activities">
-                    <Activities selectedAccount="@selectedAccount"
-                                @bind-SelectedActivities="@SelectedActivities"
-                                popupActivities="@popupActivities" />
-                </MudTabPanel>
-                <MudTabPanel Text="Stats" Disabled="@(selectedMetrics is null || selectedGraph is null)">
-                    <Stats selectedGraph="@selectedGraph" selectedMetrics="@selectedMetrics" />
-                </MudTabPanel>
-                <MudTabPanel Text="Regions">
-                    <Regions SelectedGraph="@selectedGraph" />
-                </MudTabPanel>
-            </MudTabs>
-        </div>
-    </div>
+        <MudDrawer Height="100%" Width="600px" Anchor="Anchor.Right" @bind-Open="drawerOpen" Variant="@DrawerVariant.Responsive">
+            <div style="min-width: 600px; max-width: 600px;max-height:100%;">
+                <MudTabs Class="tabs-fill">
+                    <MudTabPanel Text="Activities"
+                                 Disabled="@(selectedMetrics is null || selectedGraph is null)">
+                        <Activities selectedAccount="@selectedAccount"
+                                    @bind-SelectedActivities="@SelectedActivities"
+                                    popupActivities="@popupActivities" />
+                    </MudTabPanel>
+                    <MudTabPanel Text="Stats"
+                                 Disabled="@(selectedMetrics is null || selectedGraph is null)">
+                        <Stats Graph="@selectedGraph"
+                               Metrics="@selectedMetrics" />
+                    </MudTabPanel>
+                    <MudTabPanel Text="Regions"
+                                 Disabled="@(selectedMetrics is null || selectedGraph is null)">
+                        <Regions SelectedGraph="@selectedGraph" />
+                    </MudTabPanel>
+                </MudTabs>
+            </div>
+        </MudDrawer>
+    </MudDrawerContainer>
 </div>
 
 @code {
+    private bool drawerOpen = false;
     Graph? selectedGraph;
     List<ActivityType> selectedActivityTypes
     {
@@ -769,5 +776,10 @@
     {
         var objRef = DotNetObjectReference.Create(this);
         await JS.InvokeVoidAsync("registerBlazorComponent", objRef);
+    }
+
+    private void DrawerClick()
+    {
+        drawerOpen = !drawerOpen;
     }
 }

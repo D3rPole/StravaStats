@@ -1,7 +1,7 @@
 ﻿using NetTopologySuite.Index.KdTree;
 using PolylinerNet;
 using ProtoBuf;
-using StravaStats.BusinessObjects.Cities;
+using StravaStats.BusinessObjects.Regions;
 using StravaStats.Helper;
 using StravaStats.Services;
 using System.Diagnostics;
@@ -137,7 +137,7 @@ namespace StravaStats.BusinessObjects
         {
             QuadTree = new(new BoundingBox(-180, -90, 180, 90), 0);
             var configiration = AppData.GetService<IConfiguration>();
-            double maxNodeDistance = double.Parse(configiration["MaxNodeDistance"]);
+            double maxNodeDistance = double.Parse(configiration["MaxNodeDistance"] ?? "20");
             var valhallaResponse = activity.ValhallaTraceResponse;
             if (valhallaResponse is null)
                 return;
@@ -242,12 +242,12 @@ namespace StravaStats.BusinessObjects
             Nodes.Add(node.Coordinate, node);
         }
 
-        public Edge AddEdge(Node startNode, Node endNode)
+        public Edge? AddEdge(Node startNode, Node endNode)
         {
             return AddEdge(startNode.Coordinate, endNode.Coordinate);
         }
 
-        public Edge AddEdge(Coordinate startNodeKey, Coordinate endNodeKey)
+        public Edge? AddEdge(Coordinate startNodeKey, Coordinate endNodeKey)
         {
             EdgeKey edgeKey = new(startNodeKey, endNodeKey);
             if (Edges.ContainsKey(edgeKey))
