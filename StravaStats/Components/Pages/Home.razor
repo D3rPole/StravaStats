@@ -240,7 +240,7 @@
                         <Regions SelectedGraph="@selectedGraph"
                                  @bind-NonPassedCitiesInRegion="HighlightedCitiesNotPassed"
                                  @bind-PassedCitiesInRegion="HighlightedCitiesPassed"
-                                 SelectionChanged="RegionSelectionChanged"/>
+                                 SelectionChanged="RegionSelectionChanged" />
                     </MudTabPanel>
                 </MudTabs>
             </div>
@@ -254,8 +254,8 @@
     private Graph displayedGraph;
     private Map map;
 
-    private List<City>? HighlightedCitiesPassed {get; set;}
-    private List<City>? HighlightedCitiesNotPassed {get; set;}
+    private List<City>? HighlightedCitiesPassed { get; set; }
+    private List<City>? HighlightedCitiesNotPassed { get; set; }
 
     private List<ActivityType> selectedActivityTypes
     {
@@ -592,17 +592,6 @@
     {
         var collection = new FeatureCollection();
 
-        HighlightedCitiesPassed?.ForEach(c =>
-        {
-            var feature = new NetTopologySuite.Features.Feature(c.Geometry, new AttributesTable
-                {
-                    { "name", c.Name },
-                    { "fill", "rgba(0,255,0,0.2)" },
-                    { "stroke", "#0f0" }
-                });
-            collection.Add(feature);
-        });
-
         HighlightedCitiesNotPassed?.ForEach(c =>
         {
             var feature = new NetTopologySuite.Features.Feature(c.Geometry, new AttributesTable
@@ -610,6 +599,17 @@
                     { "name", c.Name },
                     { "fill", "rgba(255,0,0,0.2)" },
                     { "stroke", "#f00" }
+                });
+            collection.Add(feature);
+        });
+
+        HighlightedCitiesPassed?.ForEach(c =>
+        {
+            var feature = new NetTopologySuite.Features.Feature(c.Geometry, new AttributesTable
+                {
+                            { "name", c.Name },
+                            { "fill", "rgba(0,255,0,0.2)" },
+                            { "stroke", "#0f0" }
                 });
             collection.Add(feature);
         });

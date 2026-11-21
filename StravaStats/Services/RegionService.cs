@@ -3,6 +3,7 @@ using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using StravaStats.BusinessObjects.Regions;
+using StravaStats.Components.Pages.Tabs;
 
 namespace StravaStats.Services
 {
@@ -24,8 +25,8 @@ namespace StravaStats.Services
                 DataSource = citiesFilePath,
                 Mode = SqliteOpenMode.ReadOnly
             };
-            LoadAllCities();
-            LoadAllRegions();
+            LoadAllCities().GetAwaiter().GetResult();
+            LoadAllRegions().GetAwaiter().GetResult();
         }
 
         public async Task LoadAllRegions()
@@ -101,6 +102,11 @@ namespace StravaStats.Services
             }
         }
 
+        public Region? GetRegion(string regionId)
+        {
+            return Regions.ContainsKey(regionId) ? Regions[regionId] : null;
+        }
+
         public List<Region> GetRegions()
         {
             return GetRegionsAsync().GetAwaiter().GetResult();
@@ -125,10 +131,9 @@ namespace StravaStats.Services
             return GetCitiesAsync().GetAwaiter().GetResult();
         }
 
-        public City? GetCity(string id)
+        public City? GetCity(string cityId)
         {
-            var cities = GetCities();
-            return cities.FirstOrDefault(c => c.Id == id) as City;
+            return Cities.ContainsKey(cityId) ? Cities[cityId] : null;
         }
 
         public (City, Region)? GetCityByCoordinates(double lat, double lon)

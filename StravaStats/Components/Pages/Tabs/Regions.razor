@@ -2,37 +2,73 @@
 @using StravaStats.BusinessObjects.Regions
 @using StravaStats.Services
 @inject RegionService CitiesService
-<MudDataGrid SortMode="SortMode.Single" T="Region" Items="regions" MultiSelection SelectedItemsChanged="SelectedRegionsChanged">
-    <Columns>
-        <SelectColumn T="Region" />
-        <TemplateColumn Title="Name"
-                        Sortable="true"
-                        SortBy="x => x.Name">
-            <CellTemplate>
-                <MudText Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Name</MudText>
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn HeaderStyle="width: 80px;"
-                        CellStyle="width:80px;"
-                        Title="Country"
-                        Sortable="true"
-                        SortBy="x => x.Country">
-            <CellTemplate>
-                <MudText Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Country</MudText>
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn HeaderStyle="width: 150px;"
-                        CellStyle="width:150px;"
-                        InitialDirection="SortDirection.Descending"
-                        Title="Passed through"
-                        Sortable="true"
-                        SortBy="x => passedRegions.Any(r => r.Id == x.Id)">
-            <CellTemplate>
-                <MudCheckBox ReadOnly Value="passedRegions.Any(r => r.Id == context.Item.Id)" />
-            </CellTemplate>
-        </TemplateColumn>
-    </Columns>
-</MudDataGrid>
+<MudTabs>
+    <MudTabPanel Text="Region select">
+        <MudDataGrid SortMode="SortMode.Single" T="Region" Items="regions" MultiSelection SelectedItems="@selectedRegions" SelectedItemsChanged="SelectedRegionsChanged">
+            <Columns>
+                <SelectColumn T="Region" />
+                <TemplateColumn Title="Name"
+                                Sortable="true"
+                                SortBy="x => x.Name">
+                    <CellTemplate>
+                        <MudText Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Name</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn HeaderStyle="width: 80px;"
+                                CellStyle="width:80px;"
+                                Title="Country"
+                                Sortable="true"
+                                SortBy="x => x.Country">
+                    <CellTemplate>
+                        <MudText Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.Country</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn HeaderStyle="width: 180px;"
+                                CellStyle="width:180px;"
+                                InitialDirection="SortDirection.Descending"
+                                Title="Passed through"
+                                Sortable="true"
+                                SortBy="x => passedRegions.Any(r => r.Id == x.Id)">
+                    <CellTemplate>
+                        <MudIcon Color="@(passedRegions.Any(r => r.Id == context.Item.Id) ? MudBlazor.Color.Success : MudBlazor.Color.Error)" Icon="@(passedRegions.Any(r => r.Id == context.Item.Id) ? Icons.Material.Filled.Check : Icons.Material.Filled.Close)" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </MudTabPanel>
+    <MudTabPanel Text="Cities overview" Disabled="citiesDisplay is null || !citiesDisplay.Any()">
+        <MudDataGrid Items="citiesDisplay">
+            <Columns>
+                <TemplateColumn Title="Name"
+                                Sortable="true"
+                                SortBy="x => x.City.Name">
+                    <CellTemplate>
+                        <MudText Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@context.Item.City.Name</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn HeaderStyle="width: 150px;"
+                                CellStyle="width: 150px;"
+                                Title="Region"
+                                Sortable="true"
+                                SortBy="x => CitiesService.GetRegion(x.City.ParentId)?.Name">
+                    <CellTemplate>
+                        <MudText Style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; display: block;" Typo="Typo.body1">@CitiesService.GetRegion(context.Item.City.ParentId)?.Name</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn HeaderStyle="width: 180px;"
+                                CellStyle="width: 180px;"
+                                InitialDirection="SortDirection.Descending"
+                                Title="Passed through"
+                                Sortable="true"
+                                SortBy="x => x.Passed">
+                    <CellTemplate>
+                        <MudIcon Color="@(context.Item.Passed ? MudBlazor.Color.Success : MudBlazor.Color.Error)" Icon="@(context.Item.Passed ? Icons.Material.Filled.Check : Icons.Material.Filled.Close)" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </MudTabPanel>
+</MudTabs>
 
 @code {
     [Parameter, EditorRequired] public Graph SelectedGraph { get => field; set { field = value; UpdatePassedRegions(); } }
@@ -43,8 +79,10 @@
     [Parameter] public EventCallback SelectionChanged { get; set; }
 
     HashSet<Region> passedRegions = [];
-    List<Region> regions => CitiesService.GetRegions();
-    List<City> cities => CitiesService.GetCities();
+    List<Region> regions => field ??= CitiesService.GetRegions();
+    List<City> cities => field ??= CitiesService.GetCities();
+    List<(City City, bool Passed)> citiesDisplay = [];
+    HashSet<Region> selectedRegions;
 
     private void UpdatePassedRegions()
     {
@@ -58,12 +96,19 @@
 
     private async Task SelectedRegionsChanged(HashSet<Region> regions)
     {
+        selectedRegions = regions;
         var citiesInSelectedRegions = cities.Where(c => regions.Any(r => r.Id == c.ParentId)).ToList();
 
         PassedCitiesInRegion = citiesInSelectedRegions.Where(c => SelectedGraph.CitiesPassed.Any(cpId => cpId == c.Id)).ToList();
         await PassedCitiesInRegionChanged.InvokeAsync(PassedCitiesInRegion);
         NonPassedCitiesInRegion = citiesInSelectedRegions.Except(PassedCitiesInRegion).ToList();
         await NonPassedCitiesInRegionChanged.InvokeAsync(NonPassedCitiesInRegion);
+
+        citiesDisplay = PassedCitiesInRegion
+            .Select(c => (city: c, passed: true))
+            .Concat(NonPassedCitiesInRegion.Select(c => (city: c, passed: false)))
+            .ToList();
+
         await SelectionChanged.InvokeAsync();
     }
 }
