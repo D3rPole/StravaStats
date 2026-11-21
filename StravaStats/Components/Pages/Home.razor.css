@@ -59,3 +59,19 @@
     .my-map-container ::deep #map {
         height: 100%;
     }
+
+.side-panel {
+    width: 0;
+    max-height: 100%;
+    overflow: hidden;
+    transition: width 0.3s ease;
+}
+
+    .side-panel.open {
+        width: 600px;
+    }
+
+.side-panel-inner {
+    width: 600px;
+    height: 100%;
+}

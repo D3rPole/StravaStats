@@ -101,26 +101,26 @@ namespace StravaStats.Services
             }
         }
 
-        public List<BaseRegion> GetRegions()
+        public List<Region> GetRegions()
         {
             return GetRegionsAsync().GetAwaiter().GetResult();
         }
 
-        public async Task<List<BaseRegion>> GetRegionsAsync()
+        public async Task<List<Region>> GetRegionsAsync()
         {
             if (Regions is null)
                 await LoadAllRegions();
-            return Regions.Select(kv => (BaseRegion)kv.Value).ToList();
+            return Regions?.Select(kv => kv.Value).ToList() ?? [];
         }
 
-        public async Task<List<BaseRegion>> GetCitiesAsync()
+        public async Task<List<City>> GetCitiesAsync()
         {
             if (Cities is null)
                 await LoadAllCities();
-            return Cities.Select(kv => (BaseRegion)kv.Value).ToList();
+            return Cities?.Select(kv => kv.Value).ToList() ?? [];
         }
 
-        public List<BaseRegion> GetCities()
+        public List<City> GetCities()
         {
             return GetCitiesAsync().GetAwaiter().GetResult();
         }

@@ -9,6 +9,7 @@
 @using NetTopologySuite.IO
 @using StravaStats.Components.Pages.Tabs
 @using StravaStats.Helper;
+@using StravaStats.BusinessObjects.Regions;
 @inject AccountService accountService
 @inject RegionService citiesService
 @inject IConfiguration configuration
@@ -107,8 +108,8 @@
             <MudButton StartIcon="@Icons.Material.Filled.Menu" OnClick="DrawerClick" />
         </div>
     </MudCard>
-    <MudDrawerContainer Class="d-inline-flex page-body pa-2" style="width:100%;">
-        <div class="my-map-container flex-grow-1">
+    <div class="d-inline-flex page-body pa-2 pb-8" style="width:100%;">
+        <div class="my-map-container rounded flex-grow-1 mud-elevation-1">
             @if (isLoading)
             {
                 <div class="map-loading"></div>
@@ -125,9 +126,9 @@
                     <Features>
                         @if (popupCoordinate != null && !string.IsNullOrWhiteSpace(popupContent))
                         {
-                            <Marker Fill="@GetPrimaryColorString()"
-                                    Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()"
+                            <Marker Fill="@MudValues.GetPrimaryColorString()"
+                                    Stroke="@MudValues.GetBlackColorString()"
+                                    TextColor="@MudValues.GetTextColorString()"
                                     Coordinate="popupCoordinate.Value"
                                     Text="@popupContent"
                                     Popup
@@ -135,57 +136,57 @@
                                     @key="markerKey">
                             </Marker>
                         }
-                        @if (selectedMetrics is not null && !isLoading && statsExpanded)
+                        @*@if (selectedMetrics is not null && !isLoading && statsExpanded)
                         {
-                            <Marker Fill="@GetPrimaryColorString()"
-                                    Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()"
+                            <Marker Fill="@MudValues.GetPrimaryColorString()"
+                                    Stroke="@MudValues.GetBlackColorString()"
+                                    TextColor="@MudValues.GetTextColorString()"
                                     Coordinate="@(selectedMetrics.Speed.MaxPosition.ToOpenLayersCoordinate())"
                                     Popup
                                     Type="MarkerType.MarkerFlag"
                                     Text="@($"Max Speed: {selectedMetrics.Speed.MaxValue:F2} km/h")"
                                     @key="@("speed-" + selectedMetrics.GetHashCode())" />
-                            <Marker Fill="@GetPrimaryColorString()"
-                                    Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()"
+                            <Marker Fill="@MudValues.GetPrimaryColorString()"
+                                    Stroke="@MudValues.GetBlackColorString()"
+                                    TextColor="@MudValues.GetTextColorString()"
                                     Coordinate="@(selectedMetrics.Acceleration.MaxPosition.ToOpenLayersCoordinate())"
                                     Popup
                                     Type="MarkerType.MarkerFlag"
                                     Text="@($"Max Acceleration: {selectedMetrics.Acceleration.MaxValue:F2} m/s²")"
                                     @key="@("acceleration-" + selectedMetrics.GetHashCode())" />
-                            <Marker Fill="@GetPrimaryColorString()"
-                                    Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()"
+                            <Marker Fill="@MudValues.GetPrimaryColorString()"
+                                    Stroke="@MudValues.GetBlackColorString()"
+                                    TextColor="@MudValues.GetTextColorString()"
                                     Coordinate="@(selectedMetrics.HeartRate.MaxPosition.ToOpenLayersCoordinate())"
                                     Popup
                                     Type="MarkerType.MarkerFlag"
                                     Text="@($"Max Heartrate: {selectedMetrics.HeartRate.MaxValue:F2} bpm")"
                                     @key="@("heartrate-" + selectedMetrics.GetHashCode())" />
-                            <Marker Fill="@GetPrimaryColorString()"
-                                    Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()"
+                            <Marker Fill="@MudValues.GetPrimaryColorString()"
+                                    Stroke="@MudValues.GetBlackColorString()"
+                                    TextColor="@MudValues.GetTextColorString()"
                                     Coordinate="@(selectedMetrics.Grade.MaxPosition.ToOpenLayersCoordinate())"
                                     Popup
                                     Type="MarkerType.MarkerFlag"
                                     Text="@($"Max Grade: {(selectedMetrics.Grade.MaxValue):F2} %")"
                                     @key="@("mac-grade-" + selectedMetrics.GetHashCode())" />
-                            <Marker Fill="@GetPrimaryColorString()"
-                                    Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()"
+                            <Marker Fill="@MudValues.GetPrimaryColorString()"
+                                    Stroke="@MudValues.GetBlackColorString()"
+                                    TextColor="@MudValues.GetTextColorString()"
                                     Coordinate="@(selectedMetrics.Grade.MinPosition.ToOpenLayersCoordinate())"
                                     Popup
                                     Type="MarkerType.MarkerFlag"
                                     Text="@($"Min Grade: {(selectedMetrics.Grade.MinValue):F2} %")"
                                     @key="@("min-grade-" + selectedMetrics.GetHashCode())" />
-                            <Marker Fill="@GetPrimaryColorString()"
-                                    Stroke="@GetBlackColorString()"
-                                    TextColor="@GetTextColorString()"
+                            <Marker Fill="@MudValues.GetPrimaryColorString()"
+                                    Stroke="@MudValues.GetBlackColorString()"
+                                    TextColor="@MudValues.GetTextColorString()"
                                     Coordinate="@(selectedMetrics.Wattage.MaxPosition.ToOpenLayersCoordinate())"
                                     Popup
                                     Type="MarkerType.MarkerFlag"
                                     Text="@($"Max Wattage: {selectedMetrics.Wattage.MaxValue:F2} W")"
                                     @key="@("wattage-" + selectedMetrics.GetHashCode())" />
-                        }
+                        }*@
                     </Features>
                     <Layers>
                         <Layer LayerType="LayerType.Tile"
@@ -220,8 +221,8 @@
                 </Map>
             </div>
         </div>
-        <MudDrawer Height="100%" Width="600px" Anchor="Anchor.Right" @bind-Open="drawerOpen" Variant="@DrawerVariant.Responsive">
-            <div style="min-width: 600px; max-width: 600px;max-height:100%;">
+        <div class="side-panel rounded mud-elevation-1 @(drawerOpen ? "open ml-4" : "")">
+            <div class="side-panel-inner">
                 <MudTabs Class="tabs-fill">
                     <MudTabPanel Text="Activities"
                                  Disabled="@(selectedMetrics is null || selectedGraph is null)">
@@ -236,18 +237,27 @@
                     </MudTabPanel>
                     <MudTabPanel Text="Regions"
                                  Disabled="@(selectedMetrics is null || selectedGraph is null)">
-                        <Regions SelectedGraph="@selectedGraph" />
+                        <Regions SelectedGraph="@selectedGraph"
+                                 @bind-NonPassedCitiesInRegion="HighlightedCitiesNotPassed"
+                                 @bind-PassedCitiesInRegion="HighlightedCitiesPassed"
+                                 SelectionChanged="RegionSelectionChanged"/>
                     </MudTabPanel>
                 </MudTabs>
             </div>
-        </MudDrawer>
-    </MudDrawerContainer>
+        </div>
+    </div>
 </div>
 
 @code {
-    private bool drawerOpen = false;
-    Graph? selectedGraph;
-    List<ActivityType> selectedActivityTypes
+    private Account selectedAccount;
+    private Graph? selectedGraph;
+    private Graph displayedGraph;
+    private Map map;
+
+    private List<City>? HighlightedCitiesPassed {get; set;}
+    private List<City>? HighlightedCitiesNotPassed {get; set;}
+
+    private List<ActivityType> selectedActivityTypes
     {
         get => field; set
         {
@@ -256,8 +266,9 @@
             StateHasChanged();
         }
     } = [ActivityType.All];
-    GradeSelection gradeSelection = GradeSelection.All;
-    HashSet<Activity> SelectedActivities
+    private GradeSelection gradeSelection = GradeSelection.All;
+
+    private HashSet<Activity> SelectedActivities
     {
         get => field;
         set
@@ -272,30 +283,11 @@
             UpdateDisplayedGraph();
         }
     } = [];
+    private Metrics selectedMetrics;
 
-    Metrics selectedMetrics;
-    Action UpdateGraphAction;
-    private bool isLoading;
-    Graph displayedGraph;
-    Map map;
-    Account selectedAccount;
+    private Action UpdateGraphAction;
     private Metric displayedMetric;
     private Guid markerKey = Guid.NewGuid();
-    bool _listExpanded;
-    bool listExpanded => _listExpanded && selectedAccount is not null && selectedAccount.SelectedActivities is not null;
-    bool _statsExpanded;
-    bool statsExpanded => _statsExpanded && displayedGraph is not null && displayedGraph.Edges.Count() > 0;
-
-    public void StatsExpandClicked()
-    {
-        _statsExpanded = !_statsExpanded;
-    }
-
-    public void ListExpandClicked()
-    {
-        _listExpanded = !_listExpanded;
-    }
-
     public string mapLink
     {
         get
@@ -308,10 +300,11 @@
             StateHasChanged();
         }
     }
-
     public string popupContent;
     HashSet<long>? popupActivities;
     public OpenLayers.Blazor.Coordinate? popupCoordinate;
+    private bool drawerOpen = false;
+    private bool isLoading;
 
     #region DateRange
 
@@ -360,27 +353,6 @@
             Start = field.Start.ToDateTime(TimeOnly.MinValue);
             End = field.End.ToDateTime(TimeOnly.MaxValue);
         }
-    }
-
-    private string GetPrimaryColorString()
-    {
-        var theme = new MudTheme();
-        string primaryHex = theme.PaletteLight.Primary.ToString();
-        return primaryHex;
-    }
-
-    private string GetTextColorString()
-    {
-        var theme = new MudTheme();
-        string primaryHex = theme.PaletteLight.White.ToString();
-        return primaryHex;
-    }
-
-    private string GetBlackColorString()
-    {
-        var theme = new MudTheme();
-        string primaryHex = theme.PaletteLight.Black.ToString();
-        return primaryHex;
     }
 
     private void OnRangeChanged(IRange<DateOnly> newValue)
@@ -522,6 +494,16 @@
         _sizeRange = dateRange;
     }
 
+    private void DrawerClick()
+    {
+        drawerOpen = !drawerOpen;
+    }
+
+    private async Task RegionSelectionChanged()
+    {
+        await RenderRegionsViaJS();
+    }
+
     #endregion
 
     #region Graph
@@ -602,23 +584,32 @@
 
     private async Task RenderMap()
     {
-        await RenderRegionsViaJS(displayedGraph);
+        await RenderRegionsViaJS();
         await RenderEdgesViaJS(displayedGraph);
     }
 
-    private async Task RenderRegionsViaJS(Graph graph)
+    private async Task RenderRegionsViaJS()
     {
         var collection = new FeatureCollection();
-        graph.CitiesPassed.ForEach(c =>
+
+        HighlightedCitiesPassed?.ForEach(c =>
         {
-            if (!citiesService.Cities.ContainsKey(c))
-                return;
-            var city = citiesService.Cities[c];
-            var feature = new NetTopologySuite.Features.Feature(city.Geometry, new AttributesTable
+            var feature = new NetTopologySuite.Features.Feature(c.Geometry, new AttributesTable
                 {
-                    { "name", city.Name },
+                    { "name", c.Name },
                     { "fill", "rgba(0,255,0,0.2)" },
                     { "stroke", "#0f0" }
+                });
+            collection.Add(feature);
+        });
+
+        HighlightedCitiesNotPassed?.ForEach(c =>
+        {
+            var feature = new NetTopologySuite.Features.Feature(c.Geometry, new AttributesTable
+                {
+                    { "name", c.Name },
+                    { "fill", "rgba(255,0,0,0.2)" },
+                    { "stroke", "#f00" }
                 });
             collection.Add(feature);
         });
@@ -778,8 +769,4 @@
         await JS.InvokeVoidAsync("registerBlazorComponent", objRef);
     }
 
-    private void DrawerClick()
-    {
-        drawerOpen = !drawerOpen;
-    }
 }

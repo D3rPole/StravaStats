@@ -2,8 +2,7 @@
 @using StravaStats.BusinessObjects.Regions
 @using StravaStats.Services
 @inject RegionService CitiesService
-
-<MudDataGrid SortMode="SortMode.Single" T="Region" Items="regions" MultiSelection SelectedItemsChanged="@SelectedRegionsChanged" SelectedItems="@SelectedRegions">
+<MudDataGrid SortMode="SortMode.Single" T="Region" Items="regions" MultiSelection SelectedItemsChanged="SelectedRegionsChanged">
     <Columns>
         <SelectColumn T="Region" />
         <TemplateColumn Title="Name"
@@ -36,22 +35,16 @@
 </MudDataGrid>
 
 @code {
-    List<Region> regions => CitiesService.GetRegions()
-        .Where(r => r is not null && r is Region)
-        .Select(r => r as Region)
-        .ToList<Region>();
-
-    List<City> cities => CitiesService.GetCities()
-        .Where(r => r is not null && r is City)
-        .Select(r => r as City)
-        .ToList<City>();
-
-    [Parameter] public HashSet<Region> SelectedRegions { get; set; }
-    [Parameter] public EventCallback<HashSet<Region>> SelectedRegionsChanged { get; set; }
+    [Parameter, EditorRequired] public Graph SelectedGraph { get => field; set { field = value; UpdatePassedRegions(); } }
+    [Parameter] public List<City> PassedCitiesInRegion { get; set; }
+    [Parameter] public EventCallback<List<City>> PassedCitiesInRegionChanged { get; set; }
+    [Parameter] public List<City> NonPassedCitiesInRegion { get; set; }
+    [Parameter] public EventCallback<List<City>> NonPassedCitiesInRegionChanged { get; set; }
+    [Parameter] public EventCallback SelectionChanged { get; set; }
 
     HashSet<Region> passedRegions = [];
-
-    [Parameter, EditorRequired] public Graph SelectedGraph { get => field; set { field = value; UpdatePassedRegions(); } }
+    List<Region> regions => CitiesService.GetRegions();
+    List<City> cities => CitiesService.GetCities();
 
     private void UpdatePassedRegions()
     {
@@ -61,5 +54,16 @@
             return;
         }
         passedRegions = regions.Where(r => SelectedGraph.RegionsPassed.Any(rp => rp == r.Id)).ToHashSet();
+    }
+
+    private async Task SelectedRegionsChanged(HashSet<Region> regions)
+    {
+        var citiesInSelectedRegions = cities.Where(c => regions.Any(r => r.Id == c.ParentId)).ToList();
+
+        PassedCitiesInRegion = citiesInSelectedRegions.Where(c => SelectedGraph.CitiesPassed.Any(cpId => cpId == c.Id)).ToList();
+        await PassedCitiesInRegionChanged.InvokeAsync(PassedCitiesInRegion);
+        NonPassedCitiesInRegion = citiesInSelectedRegions.Except(PassedCitiesInRegion).ToList();
+        await NonPassedCitiesInRegionChanged.InvokeAsync(NonPassedCitiesInRegion);
+        await SelectionChanged.InvokeAsync();
     }
 }

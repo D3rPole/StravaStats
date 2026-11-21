@@ -24,6 +24,9 @@ window.clearMap = function () {
 
 window.drawPolygons = function (json) {
     return new Promise((resolve) => {
+        if (window._polyLayer) {
+            window._polyLayer.getSource().clear(true);
+        }
         const map = window._myOLMap;
         if (!map) {
             resolve();
@@ -60,6 +63,9 @@ function getStyle(s) {
 
 window.setEdges = function (flatCoords, colors) {
     return new Promise((resolve) => {
+        if (window._edgeLayer) {
+            window._edgeLayer.getSource().clear(true);
+        }
         const map = window._myOLMap;
         if (!map) { resolve(); return; }
 
