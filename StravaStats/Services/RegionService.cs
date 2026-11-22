@@ -25,8 +25,12 @@ namespace StravaStats.Services
                 DataSource = citiesFilePath,
                 Mode = SqliteOpenMode.ReadOnly
             };
-            LoadAllCities().GetAwaiter().GetResult();
-            LoadAllRegions().GetAwaiter().GetResult();
+        }
+
+        public async Task InitializeAsync()
+        {
+            await LoadAllCities();
+            await LoadAllRegions();
         }
 
         public async Task LoadAllRegions()
@@ -114,15 +118,11 @@ namespace StravaStats.Services
 
         public async Task<List<Region>> GetRegionsAsync()
         {
-            if (Regions is null)
-                await LoadAllRegions();
             return Regions?.Select(kv => kv.Value).ToList() ?? [];
         }
 
         public async Task<List<City>> GetCitiesAsync()
         {
-            if (Cities is null)
-                await LoadAllCities();
             return Cities?.Select(kv => kv.Value).ToList() ?? [];
         }
 
@@ -138,11 +138,6 @@ namespace StravaStats.Services
 
         public (City, Region)? GetCityByCoordinates(double lat, double lon)
         {
-            if (Cities is null)
-                throw new InvalidOperationException("Cities data is not loaded.");
-            if(Regions is null)
-                throw new InvalidOperationException("Regions data is not loaded.");
-
             var factory = new GeometryFactory(new PrecisionModel(), 4326);
             Point point = factory.CreatePoint(new Coordinate(lon, lat));
             Region? region = null;

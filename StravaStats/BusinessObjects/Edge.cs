@@ -1,6 +1,5 @@
 ﻿using ProtoBuf;
 using StravaStats.Helper;
-using System.Text.Json.Serialization;
 
 namespace StravaStats.BusinessObjects;
 

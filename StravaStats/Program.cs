@@ -14,12 +14,14 @@ builder.Services.AddMudServicesWithExtensions();
 builder.Services.AddSingleton<ActivityService>();
 builder.Services.AddSingleton<AccountService>();
 builder.Services.AddSingleton<StravaService>();
-builder.Services.AddSingleton<AppDbContext>();
 builder.Services.AddSingleton<RegionService>();
 
 builder.Services.AddHostedService(provider => provider.GetRequiredService<AccountService>());
 
 var app = builder.Build();
+
+await app.Services.GetRequiredService<ActivityService>().InitializeAsync();
+await app.Services.GetRequiredService<RegionService>().InitializeAsync();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
