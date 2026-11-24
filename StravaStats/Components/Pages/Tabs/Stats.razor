@@ -77,7 +77,7 @@
             </tr>
         </tbody>
     </MudSimpleTable>
-    <MudText Class="pa-2" Typo="Typo.body2">Pause Per Kilometer: @($"{TimeSpan.FromSeconds((Graph.TotalTime.Total - Graph.ActiveTime.Total) / Graph.Distance.Total * 1000):ss' seconds'}")</MudText>
+    <MudText Class="pa-2" Typo="Typo.body2">Pause Per Kilometer: @($"{TimeSpan.FromSeconds((Graph.TotalTime.Total - Graph.ActiveTime.Total) / Graph.Distance.Total * 1000):mm\\:ss' seconds'}")</MudText>
 }
 
 @code {

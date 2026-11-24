@@ -1,6 +1,7 @@
 ﻿using NetTopologySuite.Index.KdTree;
 using PolylinerNet;
 using ProtoBuf;
+using RtfPipe.Tokens;
 using StravaStats.BusinessObjects.Regions;
 using StravaStats.Helper;
 using StravaStats.Services;
@@ -18,7 +19,7 @@ namespace StravaStats.BusinessObjects
 
         public Dictionary<Coordinate, Node> Nodes { get; set; } = [];
 
-        public QuadTree QuadTree { get; set; }
+        //public QuadTree QuadTree { get; set; }
 
 
         [ProtoMember(1)]
@@ -72,7 +73,6 @@ namespace StravaStats.BusinessObjects
         {
             AdjacencyList = new Dictionary<Coordinate, List<Coordinate>>();
             Nodes = new Dictionary<Coordinate, Node>();
-            QuadTree = new QuadTree(new BoundingBox(-180, -90, 180, 90), 0);
 
             foreach (var edge in Edges.Values)
             {
@@ -82,9 +82,6 @@ namespace StravaStats.BusinessObjects
                 // Ensure nodes exist
                 if (!Nodes.ContainsKey(startKey)) Nodes[startKey] = new Node(startKey.Latitude, startKey.Longitude);
                 if (!Nodes.ContainsKey(endKey)) Nodes[endKey] = new Node(endKey.Latitude, endKey.Longitude);
-
-                // Rebuild QuadTree
-                QuadTree.AddEdge(edge, Nodes);
 
                 // Rebuild AdjacencyList
                 if (!AdjacencyList.TryGetValue(startKey, out var startList))
@@ -107,7 +104,6 @@ namespace StravaStats.BusinessObjects
 
         public Graph(List<Graph> graphs)
         {
-            QuadTree = new(new BoundingBox(-180, -90, 180, 90), 0, 200, 0);
             foreach (var graph in graphs)
             {
                 if (graph is null)
@@ -135,7 +131,6 @@ namespace StravaStats.BusinessObjects
 
         public Graph(Activity activity)
         {
-            QuadTree = new(new BoundingBox(-180, -90, 180, 90), 0);
             var configiration = AppData.GetService<IConfiguration>();
             double maxNodeDistance = double.Parse(configiration["MaxNodeDistance"] ?? "20");
             var valhallaResponse = activity.ValhallaTraceResponse;
@@ -195,7 +190,7 @@ namespace StravaStats.BusinessObjects
             {
                 var point = activity.TrackingPoints[i];
 
-                var closestEdge = QuadTree.GetClosestEdge(point.Latitude, point.Longitude, Nodes);
+                var closestEdge = GetClosestEdge(point.Latitude, point.Longitude, Nodes);
                 if (closestEdge is null)
                     continue;
 
@@ -223,7 +218,6 @@ namespace StravaStats.BusinessObjects
         private void RemoveEdge(Edge edge)
         {
             // Remove references from QuadTree, Edge list and Edgeless nodes left behind
-            QuadTree.RemoveEdge(edge);
             Edges.Remove(edge.EdgeKey);
 
             bool startNodeHasEdges = Edges.Any(keyValuePair => keyValuePair.Key.EndNodeKey == edge.EdgeKey.StartNodeKey || keyValuePair.Key.StartNodeKey == edge.EdgeKey.StartNodeKey);
@@ -259,7 +253,6 @@ namespace StravaStats.BusinessObjects
             };
 
             Edges.Add(edgeKey, edge);
-            QuadTree.AddEdge(edge, Nodes);
 
             if (AdjacencyList.ContainsKey(startNodeKey))
                 AdjacencyList[startNodeKey].Add(endNodeKey);
@@ -290,7 +283,15 @@ namespace StravaStats.BusinessObjects
 
         public Edge? FindEdge(double lat, double lon)
         {
-            return QuadTree.GetClosestEdge(lat, lon, Nodes);
+            return GetClosestEdge(lat, lon, Nodes);
+        }
+
+        public Edge? GetClosestEdge(double lat, double lon, Dictionary<Coordinate, Node> nodes)
+        {
+
+            return Edges
+                .OrderBy(e => e.Value.DistanceToPoint(new Node(lat, lon), nodes))
+                .FirstOrDefault().Value;
         }
 
         private Coordinate GetNodeKey(PolylinePoint node)

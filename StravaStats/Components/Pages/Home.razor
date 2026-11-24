@@ -136,87 +136,11 @@
                                     @key="markerKey">
                             </Marker>
                         }
-                        @*@if (selectedMetrics is not null && !isLoading && statsExpanded)
-                        {
-                            <Marker Fill="@MudValues.GetPrimaryColorString()"
-                                    Stroke="@MudValues.GetBlackColorString()"
-                                    TextColor="@MudValues.GetTextColorString()"
-                                    Coordinate="@(selectedMetrics.Speed.MaxPosition.ToOpenLayersCoordinate())"
-                                    Popup
-                                    Type="MarkerType.MarkerFlag"
-                                    Text="@($"Max Speed: {selectedMetrics.Speed.MaxValue:F2} km/h")"
-                                    @key="@("speed-" + selectedMetrics.GetHashCode())" />
-                            <Marker Fill="@MudValues.GetPrimaryColorString()"
-                                    Stroke="@MudValues.GetBlackColorString()"
-                                    TextColor="@MudValues.GetTextColorString()"
-                                    Coordinate="@(selectedMetrics.Acceleration.MaxPosition.ToOpenLayersCoordinate())"
-                                    Popup
-                                    Type="MarkerType.MarkerFlag"
-                                    Text="@($"Max Acceleration: {selectedMetrics.Acceleration.MaxValue:F2} m/s²")"
-                                    @key="@("acceleration-" + selectedMetrics.GetHashCode())" />
-                            <Marker Fill="@MudValues.GetPrimaryColorString()"
-                                    Stroke="@MudValues.GetBlackColorString()"
-                                    TextColor="@MudValues.GetTextColorString()"
-                                    Coordinate="@(selectedMetrics.HeartRate.MaxPosition.ToOpenLayersCoordinate())"
-                                    Popup
-                                    Type="MarkerType.MarkerFlag"
-                                    Text="@($"Max Heartrate: {selectedMetrics.HeartRate.MaxValue:F2} bpm")"
-                                    @key="@("heartrate-" + selectedMetrics.GetHashCode())" />
-                            <Marker Fill="@MudValues.GetPrimaryColorString()"
-                                    Stroke="@MudValues.GetBlackColorString()"
-                                    TextColor="@MudValues.GetTextColorString()"
-                                    Coordinate="@(selectedMetrics.Grade.MaxPosition.ToOpenLayersCoordinate())"
-                                    Popup
-                                    Type="MarkerType.MarkerFlag"
-                                    Text="@($"Max Grade: {(selectedMetrics.Grade.MaxValue):F2} %")"
-                                    @key="@("mac-grade-" + selectedMetrics.GetHashCode())" />
-                            <Marker Fill="@MudValues.GetPrimaryColorString()"
-                                    Stroke="@MudValues.GetBlackColorString()"
-                                    TextColor="@MudValues.GetTextColorString()"
-                                    Coordinate="@(selectedMetrics.Grade.MinPosition.ToOpenLayersCoordinate())"
-                                    Popup
-                                    Type="MarkerType.MarkerFlag"
-                                    Text="@($"Min Grade: {(selectedMetrics.Grade.MinValue):F2} %")"
-                                    @key="@("min-grade-" + selectedMetrics.GetHashCode())" />
-                            <Marker Fill="@MudValues.GetPrimaryColorString()"
-                                    Stroke="@MudValues.GetBlackColorString()"
-                                    TextColor="@MudValues.GetTextColorString()"
-                                    Coordinate="@(selectedMetrics.Wattage.MaxPosition.ToOpenLayersCoordinate())"
-                                    Popup
-                                    Type="MarkerType.MarkerFlag"
-                                    Text="@($"Max Wattage: {selectedMetrics.Wattage.MaxValue:F2} W")"
-                                    @key="@("wattage-" + selectedMetrics.GetHashCode())" />
-                        }*@
                     </Features>
                     <Layers>
                         <Layer LayerType="LayerType.Tile"
                                SourceType="SourceType.XYZ"
                                Url="@mapLink" />
-                        @if (displayedGraph is not null)
-                        {
-                            List<QuadTree> quadTrees = displayedGraph.QuadTree.GetAllLeaves();
-
-                            <Layer LayerType="LayerType.Vector" SourceType="SourceType.Vector">
-                                <Shapes>
-                                    @if (configuration.GetValue<bool>("ShowQuadTree"))
-                                    {
-                                        @foreach (var quadTree in quadTrees)
-                                        {
-                                            List<OpenLayers.Blazor.Coordinate> points = [
-                                                new(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1),
-                                                new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y1),
-                                                new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X2, quadTree.BoundingBox.Y2),
-                                                new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y2),
-                                                new OpenLayers.Blazor.Coordinate(quadTree.BoundingBox.X1, quadTree.BoundingBox.Y1)];
-                                            <Polygon Points="points"
-                                                     Fill="#0000"
-                                                     Stroke="#0001"
-                                                     StrokeThickness="2" />
-                                        }
-                                    }
-                                </Shapes>
-                            </Layer>
-                        }
                     </Layers>
                 </Map>
             </div>
